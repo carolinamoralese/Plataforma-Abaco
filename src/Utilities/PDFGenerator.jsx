@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import * as pdfMake from "pdfmake/build/pdfmake";
-import 'pdfmake/build/vfs_fonts';
+import "pdfmake/build/vfs_fonts";
 import PropTypes from "prop-types";
 import htmlToPdfmake from "html-to-pdfmake";
 import {
@@ -15,10 +15,9 @@ import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
 import pdfFonts from "./vfs_fonts";
 
-pdfMake.vfs = pdfFonts
+pdfMake.vfs = pdfFonts;
 
 function PdfGenerator({ onDataGenerated }) {
-
   const params = useParams();
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
@@ -64,7 +63,6 @@ function PdfGenerator({ onDataGenerated }) {
 
       if (documento.bottomParagraphs) {
         if (itemsFactura.length > 0) {
-
           const dynamicTable = {
             table: {
               widths: ["20%", "20%", "40%", "20%"],
@@ -182,7 +180,6 @@ function PdfGenerator({ onDataGenerated }) {
           ),
         });
       }
-
       content.push({
         text: htmlToPdfmake(
           "<br></br><br></br><br></br>Elaboró" + documento.elaborated
@@ -193,39 +190,15 @@ function PdfGenerator({ onDataGenerated }) {
         text: "Aprobó" + documento.approved,
         style: "informacionRevisado",
       });
-      content.push({
-        text: htmlToPdfmake(
-          "Revisó" + documento.revised + "<br></br><br></br>"
-        ),
-        style: "informacionRevisado",
-      });
-      content.push({
-        text: htmlToPdfmake(
-          '<p style="text-align: left; font-size: 8pt;">' +
-            documento.address[0] +
-            '</p><p style="text-align: right; font-size: 8pt; ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-            documento.contacto[0] +
-            "</p>"
-        ),
-      });
-      content.push({
-        text: htmlToPdfmake(
-          '<p style="text-align: left; font-size: 8pt;">' +
-            documento.address[1] +
-            '</p><p style="text-align: right; font-size: 8pt; ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-            documento.contacto[1] +
-            "</p>"
-        ),
-      });
-      content.push({
-        text: htmlToPdfmake(
-          '<p style="text-align: left; font-size: 8pt;">' +
-            documento.address[2] +
-            '</p><p style="text-align: right; font-size: 8pt; color:white">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-            documento.contacto[0] +
-            "</p>"
-        ),
-      });
+
+      if (tipoDocumento !== "constancia") {
+        content.push({
+          text: htmlToPdfmake(
+            "Revisó" + documento.revised + "<br></br><br></br>"
+          ),
+          style: "informacionRevisado",
+        });
+      }
 
       const documentDefinition = {
         content,
@@ -263,6 +236,45 @@ function PdfGenerator({ onDataGenerated }) {
           imagenFirmas: {
             border: "hidden",
           },
+          footer: {
+            fontSize: 10,
+            bold: true,
+            alignment: "center",
+            margin: [20, -10, 20, 20], // Ajusta los márgenes si es necesario
+          },
+        },
+        footer: function (paginaActual, paginaSiguiente) {
+          return {
+            columns: [
+              {
+                text:
+                  documento.address[0] +
+                  "\n" +
+                  "Telefono: " +
+                  documento.address[1] +
+                  "\n" +
+                  documento.address[2],
+                fontSize: 8,
+                alignment: "left",
+              },
+              {
+                text:
+                  "\nPágina " +
+                  paginaActual.toString() +
+                  " de " +
+                  paginaSiguiente,
+                fontSize: 8,
+                bold: true,
+                alignment: "center",
+              },
+              {
+                text: documento.contacto[0] + "\n" + documento.contacto[1],
+                fontSize: 8,
+                alignment: "right",
+              },
+            ],
+            style: "footer",
+          };
         },
       };
 
@@ -279,16 +291,22 @@ function PdfGenerator({ onDataGenerated }) {
       try {
         if (typeof params.certificados_consecutivo !== "undefined") {
           let opciones = {
-            method:"POST"
-          }
+            method: "POST",
+          };
           let parametros = new URLSearchParams({
-            authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CERTIFICADOS_INFORMACION
-          })
+            authKey:
+              VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CERTIFICADOS_INFORMACION,
+          });
 
-          const respuestaDatos = await fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS_INFORMACION+"?"+parametros,opciones)
+          const respuestaDatos = await fetch(
+            VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS_INFORMACION +
+              "?" +
+              parametros,
+            opciones
+          );
           if (!respuestaDatos.ok) {
-                 throw new Error("Error en la solicitud");
-              }
+            throw new Error("Error en la solicitud");
+          }
           const jsonData = await respuestaDatos.json();
 
           const documentos = await obtenerCertificados();
@@ -301,21 +319,24 @@ function PdfGenerator({ onDataGenerated }) {
             (item) => item["Hoja No. "] == params.certificados_consecutivo
           );
 
-
-
           generatePDF(jsonData, documento, "certificado", items);
         } else if (typeof params.constancias_consecutivo !== "undefined") {
-
           let opciones = {
-            method:"POST"
-          }
+            method: "POST",
+          };
           let parametros = new URLSearchParams({
-            authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION
-          })
-          const respuestaDatos = await fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION+"?"+parametros,opciones)
+            authKey:
+              VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
+          });
+          const respuestaDatos = await fetch(
+            VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION +
+              "?" +
+              parametros,
+            opciones
+          );
           if (!respuestaDatos.ok) {
-                 throw new Error("Error en la solicitud ");
-              }
+            throw new Error("Error en la solicitud ");
+          }
           const jsonData = await respuestaDatos.json();
 
           const documentos = await obtenerConstancias();
