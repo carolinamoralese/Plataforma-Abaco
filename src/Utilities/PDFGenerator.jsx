@@ -44,7 +44,7 @@ function PdfGenerator({ onDataGenerated }) {
       content.push({
         image: AbacoLogobase64,
         width: 150,
-        height: 100,
+        height: 54.5,
         alignment: "center",
         margin: [0, -40, 0, 20],
       });

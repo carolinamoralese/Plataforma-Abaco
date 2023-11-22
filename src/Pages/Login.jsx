@@ -10,49 +10,13 @@ import GFBLogo from "../assets/GFBLogo.png";
 import LogosAsociados from "../assets/LogosAsociados.png";
 import { obtenerUsuarios } from "../servicios/servicios";
 
-export function Login() {
-  const [usuarioCorreo, setUsuarioCorreo] = useState("")
-  const [usuarioRol, setUsuarioRol] = useState("")
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  
-  const handleLogout = () => {
-    auth
-      .signOut()
-      .then(() => {
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('usuarioRol');
-      })
-      .catch((error) => {
-        console.error('Error al cerrar sesión', error);
-      });
-  };
-  
 
+export function Login() {
   const provider = new GoogleAuthProvider();
 
   const signInWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      obtenerUsuarios()
-      .then((usuarios) => {
-        let usuarioLogueado = usuarios.filter(usuario => usuario.Correo === user.email)
-        if(usuarioLogueado.length >= 1){
-          console.log("ingreso")
-          setUsuarioCorreo(usuarioLogueado[0].Correo)
-          setUsuarioRol(usuarioLogueado[0].DescripcionRol)
-          localStorage.setItem('usuarioRol', usuarioLogueado[0].DescripcionRol);
-          localStorage.setItem('userEmail', user.email);
-          setIsLoggedIn(true); 
-        }else{
-          handleLogout()
-          console.log("salio")
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
     } catch (error) {
       console.error('Error de inicio de sesión con Google:', error);
     }
