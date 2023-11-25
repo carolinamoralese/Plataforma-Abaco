@@ -22,6 +22,8 @@ function PdfGenerator({ onDataGenerated }) {
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
+  const infoDocumento =  JSON.parse(localStorage.getItem("infoDocumento"))
+  
 
   const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
     if (data && Array.isArray(data) && data.length > 0) {
@@ -71,10 +73,11 @@ function PdfGenerator({ onDataGenerated }) {
           };
 
           dynamicTable.table.body.push([
-            "Nro Factura",
-            "Fecha Factura",
-            "Desc Articulo",
-            "Costo Unitario",
+            { text: "Nro Factura", style: "tableHeader" },
+            { text: "Fecha Factura", style: "tableHeader" },
+            { text: "Desc Articulo", style: "tableHeader" },
+            { text: "Costo Unitario", style: "tableHeader" },
+            
           ]);
 
           itemsFactura.forEach((item) => {
@@ -82,7 +85,7 @@ function PdfGenerator({ onDataGenerated }) {
               item["Nro Factura"],
               item["Fecha Factura"],
               item["Desc Articulo"],
-              item["Costo Unitario"],
+              "$ "+item["Costo Unitario"],
             ]);
           });
 
@@ -95,6 +98,7 @@ function PdfGenerator({ onDataGenerated }) {
             });
           });
         }
+    
       }
 
       if (tipoDocumento == "certificado") {
@@ -174,9 +178,9 @@ function PdfGenerator({ onDataGenerated }) {
 
         content.push({
           text: htmlToPdfmake(
-            '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por' +
-              documento.revisorFiscal.designatedBy +
-              "</p><br></br><br></br>"
+            '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
+              documento.revisorFiscal.designatedBy+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+
+              "<br></br><br></br></p>"
           ),
         });
       }
@@ -240,7 +244,12 @@ function PdfGenerator({ onDataGenerated }) {
             fontSize: 10,
             bold: true,
             alignment: "center",
-            margin: [20, -10, 20, 20], // Ajusta los márgenes si es necesario
+            margin: [20, -10, 20, 20],
+          },
+          tableHeader: {
+            bold: true,
+            fontSize: 12,
+            alignment: "left",
           },
         },
         footer: function (paginaActual, paginaSiguiente) {
@@ -309,17 +318,14 @@ function PdfGenerator({ onDataGenerated }) {
           }
           const jsonData = await respuestaDatos.json();
 
-          const documentos = await obtenerCertificados();
-          const documento = documentos.find(
-            (doc) => doc["Hoja No. "] == params.certificados_consecutivo
-          );
+
 
           const itemsFactura = await obtenerDetalleFactura();
           const items = itemsFactura.filter(
             (item) => item["Hoja No. "] == params.certificados_consecutivo
           );
 
-          generatePDF(jsonData, documento, "certificado", items);
+          generatePDF(jsonData, infoDocumento, "certificado", items);
         } else if (typeof params.constancias_consecutivo !== "undefined") {
           let opciones = {
             method: "POST",
@@ -339,12 +345,9 @@ function PdfGenerator({ onDataGenerated }) {
           }
           const jsonData = await respuestaDatos.json();
 
-          const documentos = await obtenerConstancias();
-          const documento = documentos.find(
-            (doc) => doc[" Hoja_No"] == params.constancias_consecutivo
-          );
+       
 
-          generatePDF(jsonData, documento, "constancia");
+          generatePDF(jsonData, infoDocumento, "constancia");
         }
       } catch (error) {
         console.error("Error al obtener datos:", error);

@@ -21,6 +21,7 @@ function AppRoutes() {
   const [usuarioCorreo, setUsuarioCorreo] = useState("");
   const userEmail = localStorage.getItem("userEmail");
   const userRol = localStorage.getItem("usuarioRol");
+  const isUserAuthenticated = user !== null;
 
   useEffect(() => {
     const authListener = auth.onAuthStateChanged((user) => {

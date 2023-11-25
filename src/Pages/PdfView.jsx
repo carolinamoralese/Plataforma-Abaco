@@ -7,16 +7,22 @@ import { modificarEstadoCertificadoLogistica } from "../servicios/servicios";
 import { modificarEstadoCertificadoContabilidad } from "../servicios/servicios";
 import { modificarEstadoCertificadoRevisorFiscal } from "../servicios/servicios";
 import { modificarEstadoConstanciaLogistica } from "../servicios/servicios";
+import {
+  obtenerCertificados,
+  obtenerConstancias,
+} from "../servicios/servicios";
 import { useParams } from "react-router";
-import PopUp from "../Components/PopUp"
+import PopUp from "../Components/PopUp";
 
 export function PdfView() {
   const [pdfData, setPdfData] = useState(null);
-  const [selectedOption, setSelectedOption] = useState("");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const params = useParams();
-  const usuarioRol = localStorage.getItem('usuarioRol');
-
+  const rolUsuario = localStorage.getItem("usuarioRol");
+  const [mostrarBotones, setMostrarBotones] = useState(false);
+  const rolUsuariologistica = "R_Logistica";
+  const rolUsuarioCotabilidad = "R_Contabilidad";
+  const rolUsuarioRevisorFiscal = "R_Fiscal";
 
   const showPDF = (pdfBlob) => {
     setPdfData(URL.createObjectURL(pdfBlob));
@@ -24,10 +30,57 @@ export function PdfView() {
   const aceptar = "SI";
   const rechazar = "NO";
 
-  function cambiarEstadoDocumento(
-    nuevoEstado,
-    rolDelUsuario
-  ) {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (typeof params.certificados_consecutivo !== "undefined") {
+          const documentos = await obtenerCertificados();
+          const documento = documentos.find(
+            (doc) => doc["Hoja No. "] == params.certificados_consecutivo
+          );
+          localStorage.setItem("infoDocumento", JSON.stringify(documento))
+          if (
+            rolUsuario == "Logistica" &&
+            documento[rolUsuariologistica] === ""
+          ) {
+            setMostrarBotones(true);
+          } else if (
+            rolUsuario == "Contabilidad" &&
+            documento[rolUsuariologistica].toUpperCase() === "SI" &&
+            documento[rolUsuarioCotabilidad] === ""
+          ) {
+            setMostrarBotones(true);
+          } else if (
+            rolUsuario == "Fiscal" &&
+            documento[rolUsuariologistica].toUpperCase() === "SI" &&
+            documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+            documento[rolUsuarioRevisorFiscal] === ""
+          ) {
+            setMostrarBotones(true);
+          }
+        } else if (typeof params.constancias_consecutivo !== "undefined") {
+          const documentos = await obtenerConstancias();
+          const documento = documentos.find(
+            (doc) => doc[" Hoja_No"] == params.constancias_consecutivo
+          );
+            localStorage.setItem("infoDocumento", JSON.stringify(documento))
+          if (
+            rolUsuario == "Logistica" &&
+            documento[rolUsuariologistica] === ""
+          ) {
+            console.log("pepis");
+            setMostrarBotones(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (typeof params.certificados_consecutivo !== "undefined") {
       if (rolDelUsuario == "Logistica") {
         modificarEstadoCertificadoLogistica(
@@ -46,10 +99,12 @@ export function PdfView() {
         );
       }
     } else if (typeof params.constancias_consecutivo !== "undefined") {
-      modificarEstadoConstanciaLogistica(nuevoEstado, params.constancias_consecutivo);
+      modificarEstadoConstanciaLogistica(
+        nuevoEstado,
+        params.constancias_consecutivo
+      );
     }
-        setIsPopupOpen(true);
-  
+    setIsPopupOpen(true);
   }
 
   const homeStyle = {
@@ -71,7 +126,7 @@ export function PdfView() {
         style={homeStyle}
         className="relative mt-5 flex flex-col items-center ml-40"
       >
-        <div className="flex justify-center">
+        <div className="grid place-items-start">
           {pdfData && (
             <iframe
               title="PDF Viewer"
@@ -82,42 +137,46 @@ export function PdfView() {
             />
           )}
         </div>
-        <div className="mt-4">
-          <PdfGenerator onDataGenerated={showPDF} /> {/* Generar PDF */}
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <div className="mr-4 mb-4">
-            <CreateButton
-              colorClass="bg-verde-claro w-150 h-10"
-              selected={selectedOption === "aceptar"}
-              onClick={() =>
-                cambiarEstadoDocumento(
-                  aceptar,
-                  usuarioRol,
-                )
-              }
-              text="Aceptar"
-            ></CreateButton>
+    
+          <div className="mt-4">
+            <PdfGenerator onDataGenerated={showPDF} /> {/* Generar PDF */}
           </div>
-          <div className="mr-4 mb-4">
-            <CreateButton
-              colorClass="bg-gris-claro w-150 h-10"
-              selected={selectedOption === "rechazar"}
-              onClick={() =>
-                cambiarEstadoDocumento(
-                  rechazar,
-                  usuarioRol
-                )
-              }
-              text="Rechazar"
-            ></CreateButton>
-          </div>
-        </div>
+          {mostrarBotones && (<div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div className="mr-4 mb-4">
+              <CreateButton
+                colorClass="bg-naranja w-150 h-10"
+                onClick={() => window.location.reload()}
+                text="Actualizar"
+              />
+            </div>
+            <div className="mr-4 mb-4">
+              <CreateButton
+                colorClass="bg-verde-claro w-150 h-10"
+                selected={false}
+                onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                text="Aceptar"
+              ></CreateButton>
+            </div>
+            <div className="mr-4 mb-4">
+              <CreateButton
+                colorClass="bg-gris-claro w-150 h-10"
+                selected={false}
+                onClick={() => cambiarEstadoDocumento(rechazar, rolUsuario)}
+                text="Rechazar"
+              ></CreateButton>
+            </div>
+          </div>)}
+          
+     
+
         {isPopupOpen && (
-          <PopUp isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} message="¡Se ha gestionado el documento!" />
+          <PopUp
+            isOpen={isPopupOpen}
+            onClose={() => setIsPopupOpen(false)}
+            message="¡Se ha gestionado el documento!"
+          />
         )}
       </div>
     </>
   );
-
- }
+}
