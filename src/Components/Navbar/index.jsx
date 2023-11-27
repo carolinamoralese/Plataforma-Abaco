@@ -1,13 +1,13 @@
 import { auth } from '../../firebase'
 import { NavLink } from "react-router-dom";
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'
 import logoColor from "../../assets/logocolor.png";
 import cosecha from "../../assets/EDITABL-PLATAFORMA-10.png";
 import hoja from "../../assets/hoja.png";
 import './index.css'
 
 export const  Barrasuperior = () => {
- 
+  const navigate = useNavigate()
   const userEmail = localStorage.getItem('userEmail');
   const userRol = localStorage.getItem('usuarioRol');
 
@@ -17,6 +17,7 @@ export const  Barrasuperior = () => {
       .then(() => {
         localStorage.removeItem('userEmail');
         localStorage.removeItem('usuarioRol');
+        navigate('/')
       })
       .catch((error) => {
         console.error('Error al cerrar sesión', error);

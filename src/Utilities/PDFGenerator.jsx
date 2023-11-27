@@ -8,8 +8,6 @@ import {
   firmaRepresentanteLegal,
   firmaRevisorFiscal,
 } from "./utilities";
-import { obtenerCertificados } from "../servicios/servicios";
-import { obtenerConstancias } from "../servicios/servicios";
 import { obtenerDetalleFactura } from "../servicios/servicios";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";

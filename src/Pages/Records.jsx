@@ -13,8 +13,6 @@ export function Records() {
   const usuarioRol = localStorage.getItem('usuarioRol');
   const propiedadEmpresa = "Empresa";
   const rolUsuariologistica = "R_Logistica";
-  const rolUsuarioCotabilidad = "R_Contabilidad";
-  const rolUsuarioRevisorFiscal = "R_Fiscal";
 
   useEffect(() => {
     obtenerConstancias()

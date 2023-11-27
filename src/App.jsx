@@ -17,13 +17,9 @@ import Swal from 'sweetalert2';
 
 function AppRoutes() {
   const [user, setUser] = useState(null);
-  const [usuarioRol, setUsuarioRol] = useState("");
-  const [usuarioCorreo, setUsuarioCorreo] = useState("");
-  const userEmail = localStorage.getItem("userEmail");
-  const userRol = localStorage.getItem("usuarioRol");
-  const isUserAuthenticated = user !== null;
 
   useEffect(() => {
+
     const authListener = auth.onAuthStateChanged((user) => {
       if (user) {
         obtenerUsuarios()
@@ -32,8 +28,6 @@ function AppRoutes() {
             (usuario) => user.email === usuario.Correo
           );
           if (usuarioLogueado) {
-            setUsuarioCorreo(usuarioLogueado.Correo);
-            setUsuarioRol(usuarioLogueado.DescripcionRol);
             localStorage.setItem(
               "usuarioRol",
               usuarioLogueado.DescripcionRol

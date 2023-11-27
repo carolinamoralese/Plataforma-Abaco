@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom'
 import { Navbar, Barrasuperior } from "../Components/Navbar/Index";
 import PdfGenerator from "../Utilities/PDFGenerator";
 import Group from "../assets/Group.png";
@@ -15,6 +16,7 @@ import { useParams } from "react-router";
 import PopUp from "../Components/PopUp";
 
 export function PdfView() {
+  const navigate = useNavigate()
   const [pdfData, setPdfData] = useState(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const params = useParams();
@@ -77,7 +79,14 @@ export function PdfView() {
       }
     };
 
-    fetchData();
+    const userEmail = localStorage.getItem('userEmail')
+
+    if(userEmail){
+      fetchData();
+    }else{
+      navigate('/')
+    }
+
   }, []);
 
   function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
