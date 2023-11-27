@@ -7,12 +7,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 export const firebaseConfig = {
-  apiKey: "AIzaSyDf2WJhJwehepk8ZEx8-gQOfw9OGOzyMUU",
-  authDomain: "abaco-f8d2f.firebaseapp.com",
-  projectId: "abaco-f8d2f",
-  storageBucket: "abaco-f8d2f.appspot.com",
-  messagingSenderId: "274521811079",
-  appId: "1:274521811079:web:5bceff49ec3d97c9c47022",
+  apiKey: "AIzaSyCF6QAadY_Mzej8QjEp0WXXPW1Rr8jVe9s",
+  authDomain: "abacocolombia-a70ab.firebaseapp.com",
+  projectId: "abacocolombia-a70ab",
+  storageBucket: "abacocolombia-a70ab.appspot.com",
+  messagingSenderId: "368670011231",
+  appId: "1:368670011231:web:0860f887fce12b43f290ea",
+  measurementId: "G-0FKYPBHRH3"
 };
 
 // Initialize Firebase
