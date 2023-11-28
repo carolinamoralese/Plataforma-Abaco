@@ -25,21 +25,25 @@ export function PdfView() {
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
+  const userEmail = localStorage.getItem("userEmail")
 
   const showPDF = (pdfBlob) => {
     setPdfData(URL.createObjectURL(pdfBlob));
   };
   const aceptar = "SI";
   const rechazar = "NO";
+  console.log("pepita la mas bonita")
 
   useEffect(() => {
+    console.log("ani")
     const fetchData = async () => {
       try {
         if (typeof params.certificados_consecutivo !== "undefined") {
           const documentos = await obtenerCertificados();
           const documento = documentos.find(
-            (doc) => doc["Hoja No. "] == params.certificados_consecutivo
+            (doc) => doc["Hoja_No"] == params.certificados_consecutivo
           );
+          console.log(documento,55555)
           localStorage.setItem("infoDocumento", JSON.stringify(documento))
           if (
             rolUsuario == "Logistica" &&
@@ -81,20 +85,22 @@ export function PdfView() {
 
     const userEmail = localStorage.getItem('userEmail')
 
+    console.log(userEmail,1111)
     if(userEmail){
       fetchData();
     }else{
       navigate('/')
     }
 
-  }, []);
+  }, [navigate, params.certificados_consecutivo, params.constancias_consecutivo, rolUsuario]);
 
   function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (typeof params.certificados_consecutivo !== "undefined") {
       if (rolDelUsuario == "Logistica") {
         modificarEstadoCertificadoLogistica(
           nuevoEstado,
-          params.certificados_consecutivo
+          params.certificados_consecutivo,
+          userEmail
         );
       } else if (rolDelUsuario == "Contabilidad") {
         modificarEstadoCertificadoContabilidad(
@@ -110,7 +116,8 @@ export function PdfView() {
     } else if (typeof params.constancias_consecutivo !== "undefined") {
       modificarEstadoConstanciaLogistica(
         nuevoEstado,
-        params.constancias_consecutivo
+        params.constancias_consecutivo,
+        userEmail
       );
     }
     setIsPopupOpen(true);

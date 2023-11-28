@@ -24,7 +24,7 @@ export const obtenerConstancias = () => {
     })
 }
 
-export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo) => {
+export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, correo) => {
     let opciones = {
         method: "POST",
         
@@ -33,6 +33,7 @@ export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo) =>
         authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_MODIFICAR_ESTADOS_CERTIFICADOS_LOGISTICA,
         consecutivo,
         dataToAdd: nuevoEstado,
+        dataToAdd2: correo
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_LOGISTICA+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
@@ -80,7 +81,7 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
     })
 }
 
-export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo) => {
+export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo) => {
     let opciones = {
         method: "POST",
         
@@ -89,6 +90,7 @@ export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo) => 
         authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_MODIFICAR_ESTADOS_CONSTANCIA_LOGISTICA,
         dataToAdd: nuevoEstado,
         consecutivo,
+        dataToAdd2: correo,
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_LOGISTICA+"?"+parametros, opciones)

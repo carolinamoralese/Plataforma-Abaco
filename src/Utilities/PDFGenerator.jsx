@@ -21,14 +21,18 @@ function PdfGenerator({ onDataGenerated }) {
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
+  console.log(localStorage.getItem("infoDocumento"),8787)
   const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
+  console.log(infoDocumento,90909)
  
 
   const uploadPDFToFirebaseStorage = async (pdfBlob) => {
     try {
       const storage = getStorage();
-      const nombreArchivo = infoDocumento["Consecutivo"];
-      const rutaArchivo = `pdfs/${nombreArchivo}`;
+      const nombreCliente = infoDocumento["NIT"];
+      const nombreArchivo = infoDocumento["Consecutivo"]
+      
+      const rutaArchivo = `pdfs/${nombreCliente}/${nombreArchivo}`;
       const storageRef = ref(storage, rutaArchivo); // Cambiar 'carpeta_destino' y 'nombre_archivo' según lo desees
 
       await uploadBytes(storageRef, pdfBlob);
@@ -340,7 +344,7 @@ function PdfGenerator({ onDataGenerated }) {
 
           const itemsFactura = await obtenerDetalleFactura();
           const items = itemsFactura.filter(
-            (item) => item["Hoja No. "] == params.certificados_consecutivo
+            (item) => item["Hoja_No"] == params.certificados_consecutivo
           );
 
           generatePDF(jsonData, infoDocumento, "certificado", items);
