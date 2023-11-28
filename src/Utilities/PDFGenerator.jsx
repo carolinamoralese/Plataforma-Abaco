@@ -9,6 +9,7 @@ import {
   firmaRevisorFiscal,
 } from "./utilities";
 import { obtenerDetalleFactura } from "../servicios/servicios";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
 import pdfFonts from "./vfs_fonts";
@@ -20,8 +21,29 @@ function PdfGenerator({ onDataGenerated }) {
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
-  const infoDocumento =  JSON.parse(localStorage.getItem("infoDocumento"))
-  
+  const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
+ 
+
+  const uploadPDFToFirebaseStorage = async (pdfBlob) => {
+    try {
+      const storage = getStorage();
+      const nombreArchivo = infoDocumento["Consecutivo"];
+      const rutaArchivo = `pdfs/${nombreArchivo}`;
+      const storageRef = ref(storage, rutaArchivo); // Cambiar 'carpeta_destino' y 'nombre_archivo' según lo desees
+
+      await uploadBytes(storageRef, pdfBlob);
+
+      // Obtener la URL de descarga del archivo que acabamos de cargar
+      const downloadURL = await getDownloadURL(storageRef);
+
+      console.log("PDF subido a Firebase Storage:", downloadURL);
+
+      // Llamar a la función onDataGenerated para hacer lo que sea necesario con la URL del PDF
+      onDataGenerated(downloadURL);
+    } catch (error) {
+      console.error("Error al subir el PDF a Firebase Storage:", error);
+    }
+  };
 
   const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
     if (data && Array.isArray(data) && data.length > 0) {
@@ -75,7 +97,6 @@ function PdfGenerator({ onDataGenerated }) {
             { text: "Fecha Factura", style: "tableHeader" },
             { text: "Desc Articulo", style: "tableHeader" },
             { text: "Costo Unitario", style: "tableHeader" },
-            
           ]);
 
           itemsFactura.forEach((item) => {
@@ -83,7 +104,7 @@ function PdfGenerator({ onDataGenerated }) {
               item["Nro Factura"],
               item["Fecha Factura"],
               item["Desc Articulo"],
-              "$ "+item["Costo Unitario"],
+              "$ " + item["Costo Unitario"],
             ]);
           });
 
@@ -96,7 +117,6 @@ function PdfGenerator({ onDataGenerated }) {
             });
           });
         }
-    
       }
 
       if (tipoDocumento == "certificado") {
@@ -177,7 +197,8 @@ function PdfGenerator({ onDataGenerated }) {
         content.push({
           text: htmlToPdfmake(
             '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
-              documento.revisorFiscal.designatedBy+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+
+              documento.revisorFiscal.designatedBy +
+              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
               "<br></br><br></br></p>"
           ),
         });
@@ -289,6 +310,7 @@ function PdfGenerator({ onDataGenerated }) {
 
       pdfDoc.getBlob((pdfBlob) => {
         onDataGenerated(pdfBlob);
+        uploadPDFToFirebaseStorage(pdfBlob);
       });
     }
   };
@@ -316,8 +338,6 @@ function PdfGenerator({ onDataGenerated }) {
           }
           const jsonData = await respuestaDatos.json();
 
-
-
           const itemsFactura = await obtenerDetalleFactura();
           const items = itemsFactura.filter(
             (item) => item["Hoja No. "] == params.certificados_consecutivo
@@ -342,8 +362,6 @@ function PdfGenerator({ onDataGenerated }) {
             throw new Error("Error en la solicitud ");
           }
           const jsonData = await respuestaDatos.json();
-
-       
 
           generatePDF(jsonData, infoDocumento, "constancia");
         }
