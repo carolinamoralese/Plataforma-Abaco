@@ -32,10 +32,7 @@ export function PdfView() {
   };
   const aceptar = "SI";
   const rechazar = "NO";
-  console.log("pepita la mas bonita")
 
-  useEffect(() => {
-    console.log("ani")
     const fetchData = async () => {
       try {
         if (typeof params.certificados_consecutivo !== "undefined") {
@@ -43,7 +40,6 @@ export function PdfView() {
           const documento = documentos.find(
             (doc) => doc["Hoja_No"] == params.certificados_consecutivo
           );
-          console.log(documento,55555)
           localStorage.setItem("infoDocumento", JSON.stringify(documento))
           if (
             rolUsuario == "Logistica" &&
@@ -67,14 +63,13 @@ export function PdfView() {
         } else if (typeof params.constancias_consecutivo !== "undefined") {
           const documentos = await obtenerConstancias();
           const documento = documentos.find(
-            (doc) => doc[" Hoja_No"] == params.constancias_consecutivo
+            (doc) => doc["Hoja_No"] == params.constancias_consecutivo
           );
             localStorage.setItem("infoDocumento", JSON.stringify(documento))
           if (
             rolUsuario == "Logistica" &&
             documento[rolUsuariologistica] === ""
           ) {
-            console.log("pepis");
             setMostrarBotones(true);
           }
         }
@@ -83,16 +78,14 @@ export function PdfView() {
       }
     };
 
-    const userEmail = localStorage.getItem('userEmail')
 
-    console.log(userEmail,1111)
     if(userEmail){
       fetchData();
     }else{
       navigate('/')
     }
 
-  }, [navigate, params.certificados_consecutivo, params.constancias_consecutivo, rolUsuario]);
+
 
   function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (typeof params.certificados_consecutivo !== "undefined") {
@@ -105,12 +98,14 @@ export function PdfView() {
       } else if (rolDelUsuario == "Contabilidad") {
         modificarEstadoCertificadoContabilidad(
           nuevoEstado,
-          params.certificados_consecutivo
+          params.certificados_consecutivo,
+          userEmail
         );
       } else if (rolDelUsuario == "Fiscal") {
         modificarEstadoCertificadoRevisorFiscal(
           nuevoEstado,
-          params.certificados_consecutivo
+          params.certificados_consecutivo,
+          userEmail
         );
       }
     } else if (typeof params.constancias_consecutivo !== "undefined") {

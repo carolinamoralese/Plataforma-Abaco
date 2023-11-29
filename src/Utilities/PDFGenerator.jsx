@@ -21,9 +21,7 @@ function PdfGenerator({ onDataGenerated }) {
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
-  console.log(localStorage.getItem("infoDocumento"),8787)
   const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
-  console.log(infoDocumento,90909)
  
 
   const uploadPDFToFirebaseStorage = async (pdfBlob) => {
@@ -32,9 +30,8 @@ function PdfGenerator({ onDataGenerated }) {
       const nombreCliente = infoDocumento["NIT"];
       const nombreArchivo = infoDocumento["Consecutivo"]
       
-      const rutaArchivo = `pdfs/${nombreCliente}/${nombreArchivo}`;
-      const storageRef = ref(storage, rutaArchivo); // Cambiar 'carpeta_destino' y 'nombre_archivo' según lo desees
-
+      const rutaArchivo = `pdfs/${nombreCliente}${nombreArchivo}`;
+      const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
 
       // Obtener la URL de descarga del archivo que acabamos de cargar
@@ -42,7 +39,6 @@ function PdfGenerator({ onDataGenerated }) {
 
       console.log("PDF subido a Firebase Storage:", downloadURL);
 
-      // Llamar a la función onDataGenerated para hacer lo que sea necesario con la URL del PDF
       onDataGenerated(downloadURL);
     } catch (error) {
       console.error("Error al subir el PDF a Firebase Storage:", error);
@@ -58,9 +54,10 @@ function PdfGenerator({ onDataGenerated }) {
         );
       } else if (typeof params.constancias_consecutivo !== "undefined") {
         documento = data.filter(
-          (documento) => documento["hoja_No"] == params.constancias_consecutivo
+          (documento) => documento["Hoja_No"] == params.constancias_consecutivo
         );
       }
+      
 
       documento = documento[0];
 
@@ -73,6 +70,7 @@ function PdfGenerator({ onDataGenerated }) {
         alignment: "center",
         margin: [0, -40, 0, 20],
       });
+      
       documento.titulos.forEach((titulo) => {
         content.push({
           text: htmlToPdfmake(titulo + "<br><br>"),
@@ -353,7 +351,7 @@ function PdfGenerator({ onDataGenerated }) {
             method: "POST",
           };
           let parametros = new URLSearchParams({
-            authKey:
+            key:
               VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
           });
           const respuestaDatos = await fetch(
