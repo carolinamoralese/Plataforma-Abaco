@@ -97,6 +97,7 @@ export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, cor
         dataToAdd: nuevoEstado,
         consecutivo,
         dataToAdd2: correo,
+        dataToAdd3: "PDTE POR ENVIAR COMENTARIO REAL",
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_LOGISTICA+"?"+parametros, opciones)

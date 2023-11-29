@@ -54,7 +54,7 @@ function PdfGenerator({ onDataGenerated }) {
         );
       } else if (typeof params.constancias_consecutivo !== "undefined") {
         documento = data.filter(
-          (documento) => documento["Hoja_No"] == params.constancias_consecutivo
+          (documento) => documento["hoja_No"] == params.constancias_consecutivo
         );
       }
       
@@ -286,6 +286,7 @@ function PdfGenerator({ onDataGenerated }) {
                   documento.address[2],
                 fontSize: 8,
                 alignment: "left",
+                margin: [20, 8, 0, 0]
               },
               {
                 text:
@@ -296,11 +297,13 @@ function PdfGenerator({ onDataGenerated }) {
                 fontSize: 8,
                 bold: true,
                 alignment: "center",
+                margin: [0, 8, 0, 0]
               },
               {
                 text: documento.contacto[0] + "\n" + documento.contacto[1],
                 fontSize: 8,
                 alignment: "right",
+                margin: [0, 8, 20, 0]
               },
             ],
             style: "footer",
