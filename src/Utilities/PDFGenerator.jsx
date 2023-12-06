@@ -1,45 +1,42 @@
 import { useEffect } from "react";
-import * as pdfMake from "pdfmake/build/pdfmake";
 import "pdfmake/build/vfs_fonts";
 import PropTypes from "prop-types";
 import htmlToPdfmake from "html-to-pdfmake";
+import { useNavigate } from "react-router-dom";
 import {
   AbacoLogobase64,
   firmaRepresentanteLegal,
   firmaRevisorFiscal,
 } from "./utilities";
 import { obtenerDetalleFactura } from "../servicios/servicios";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
-import pdfFonts from "./vfs_fonts";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 
-pdfMake.vfs = pdfFonts;
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 function PdfGenerator({ onDataGenerated }) {
   const params = useParams();
+  const navigate = useNavigate();
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
- 
 
-  const uploadPDFToFirebaseStorage = async (pdfBlob) => {
+  const uploadPDFToFirebaseStorage = async (
+    pdfBlob,
+    nit,
+    tipoDocumento,
+    consecutivo
+  ) => {
     try {
       const storage = getStorage();
-      const nombreCliente = infoDocumento["NIT"];
-      const nombreArchivo = infoDocumento["Consecutivo"]
-      
-      const rutaArchivo = `pdfs/${nombreCliente}${nombreArchivo}`;
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
-
-      // Obtener la URL de descarga del archivo que acabamos de cargar
-      const downloadURL = await getDownloadURL(storageRef);
-
-      console.log("PDF subido a Firebase Storage:", downloadURL);
-
-      onDataGenerated(downloadURL);
     } catch (error) {
       console.error("Error al subir el PDF a Firebase Storage:", error);
     }
@@ -57,9 +54,12 @@ function PdfGenerator({ onDataGenerated }) {
           (documento) => documento["hoja_No"] == params.constancias_consecutivo
         );
       }
-      
 
       documento = documento[0];
+
+      if (documento === undefined) {
+        navigate("/");
+      }
 
       let content = [];
 
@@ -70,7 +70,7 @@ function PdfGenerator({ onDataGenerated }) {
         alignment: "center",
         margin: [0, -40, 0, 20],
       });
-      
+
       documento.titulos.forEach((titulo) => {
         content.push({
           text: htmlToPdfmake(titulo + "<br><br>"),
@@ -86,7 +86,10 @@ function PdfGenerator({ onDataGenerated }) {
       });
 
       if (documento.bottomParagraphs) {
-        if (itemsFactura.length > 0) {
+        if (
+          itemsFactura.length > 0 &&
+          itemsFactura[0]["Costo Total"] === "N/A"
+        ) {
           const dynamicTable = {
             table: {
               widths: ["20%", "20%", "40%", "20%"],
@@ -106,12 +109,104 @@ function PdfGenerator({ onDataGenerated }) {
               item["Nro Factura"],
               item["Fecha Factura"],
               item["Desc Articulo"],
-              "$ " + item["Costo Unitario"],
+              item["Costo Unitario"].toLocaleString("es-CO", {
+                style: "currency",
+                currency: "COP",
+              }),
             ]);
           });
 
-          content.push(dynamicTable);
+          const costoTotal = itemsFactura.reduce(
+            (total, objeto) => total + objeto["Costo Unitario"],
+            0
+          );
 
+          dynamicTable.table.body.push([
+            "Total",
+            "",
+            "",
+            costoTotal.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            }),
+          ]);
+
+          content.push(dynamicTable);
+        } else if (
+          itemsFactura.length > 0 &&
+          itemsFactura[0]["Costo Unitario"] === "N/A"
+        ) {
+          const facturasAgrupadas = itemsFactura.reduce(
+            (acumulador, objeto) => {
+              const factura = objeto["Nro Factura"];
+              if (!acumulador[factura]) {
+                acumulador[factura] = [];
+              }
+              acumulador[factura].push(objeto);
+              return acumulador;
+            },
+            {}
+          );
+
+          const arraysFacturasAgrupadas = Object.values(facturasAgrupadas);
+
+          const dynamicTable = {
+            table: {
+              widths: ["20%", "20%", "40%", "20%"],
+              body: [],
+            },
+          };
+
+          dynamicTable.table.body.push([
+            { text: "Nro Factura", style: "tableHeader" },
+            { text: "Fecha Factura", style: "tableHeader" },
+            { text: "Desc Articulo", style: "tableHeader" },
+            { text: "Costo Total", style: "tableHeader" },
+          ]);
+
+          let costoTotal = 0;
+
+          arraysFacturasAgrupadas.forEach((itemsFactura) => {
+            itemsFactura.forEach((item, indice, array) => {
+              if (indice === array.length - 1) {
+                costoTotal += item["Costo Total"];
+                dynamicTable.table.body.push([
+                  item["Nro Factura"],
+                  item["Fecha Factura"],
+                  item["Desc Articulo"],
+                  item["Costo Total"].toLocaleString("es-CO", {
+                    style: "currency",
+                    currency: "COP",
+                  }),
+                ]);
+              } else {
+                dynamicTable.table.body.push([
+                  item["Nro Factura"],
+                  item["Fecha Factura"],
+                  item["Desc Articulo"],
+                  "",
+                ]);
+              }
+            });
+          });
+
+          dynamicTable.table.body.push([
+            "Total",
+            "",
+            "",
+            costoTotal.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            }),
+          ]);
+
+          content.push(dynamicTable);
+        }
+
+        if (
+          documento.bottomParagraphs !== undefined &&
+          documento.bottomParagraphs > 0
+        ) {
           documento.bottomParagraphs.forEach((paragraph) => {
             content.push({
               text: htmlToPdfmake("<br></br>" + paragraph + "<br></br>"),
@@ -286,7 +381,7 @@ function PdfGenerator({ onDataGenerated }) {
                   documento.address[2],
                 fontSize: 8,
                 alignment: "left",
-                margin: [20, 8, 0, 0]
+                margin: [20, 8, 0, 0],
               },
               {
                 text:
@@ -297,13 +392,13 @@ function PdfGenerator({ onDataGenerated }) {
                 fontSize: 8,
                 bold: true,
                 alignment: "center",
-                margin: [0, 8, 0, 0]
+                margin: [0, 8, 0, 0],
               },
               {
                 text: documento.contacto[0] + "\n" + documento.contacto[1],
                 fontSize: 8,
                 alignment: "right",
-                margin: [0, 8, 20, 0]
+                margin: [0, 8, 20, 0],
               },
             ],
             style: "footer",
@@ -315,7 +410,12 @@ function PdfGenerator({ onDataGenerated }) {
 
       pdfDoc.getBlob((pdfBlob) => {
         onDataGenerated(pdfBlob);
-        uploadPDFToFirebaseStorage(pdfBlob);
+        uploadPDFToFirebaseStorage(
+          pdfBlob,
+          infoDocumento["NIT"],
+          tipoDocumento,
+          documento["hoja_No"]
+        );
       });
     }
   };
@@ -344,9 +444,22 @@ function PdfGenerator({ onDataGenerated }) {
           const jsonData = await respuestaDatos.json();
 
           const itemsFactura = await obtenerDetalleFactura();
-          const items = itemsFactura.filter(
-            (item) => item["Hoja_No"] == params.certificados_consecutivo
-          );
+          let items;
+
+          /* Quitar esta validación cuando se ajustes las apis
+             y la información este acorde en todas
+             cuando se visualice el documento 97, se va a mostrar
+             el detalle de la factura del documento 263
+             Para hacer pruebas mostrando la tabla costo total
+          */
+          if (params.certificados_consecutivo == 97) {
+            // 263 detalle de factura de otro documento, solo para hacer pruebas
+            items = itemsFactura.filter((item) => item["Hoja No. "] == 263);
+          } else {
+            items = itemsFactura.filter(
+              (item) => item["Hoja No. "] == params.certificados_consecutivo
+            );
+          }
 
           generatePDF(jsonData, infoDocumento, "certificado", items);
         } else if (typeof params.constancias_consecutivo !== "undefined") {
@@ -354,8 +467,7 @@ function PdfGenerator({ onDataGenerated }) {
             method: "POST",
           };
           let parametros = new URLSearchParams({
-            key:
-              VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
+            key: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
           });
           const respuestaDatos = await fetch(
             VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION +
