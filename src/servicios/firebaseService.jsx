@@ -1,5 +1,6 @@
 import { db } from '../firebase'; // Importa db (Firebase Firestore)
 
+
 // Función para obtener la información del usuario por correo electrónico
 export const getUserInfoByEmail = async (userEmail) => {
     try {
@@ -16,3 +17,4 @@ export const getUserInfoByEmail = async (userEmail) => {
       throw error;
     }
   };
+

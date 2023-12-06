@@ -1,28 +1,46 @@
 import { useEffect } from "react";
-import * as pdfMake from "pdfmake/build/pdfmake";
-import 'pdfmake/build/vfs_fonts';
+import "pdfmake/build/vfs_fonts";
 import PropTypes from "prop-types";
 import htmlToPdfmake from "html-to-pdfmake";
+import { useNavigate } from "react-router-dom";
 import {
   AbacoLogobase64,
   firmaRepresentanteLegal,
   firmaRevisorFiscal,
 } from "./utilities";
-import { obtenerCertificados } from "../servicios/servicios";
-import { obtenerConstancias } from "../servicios/servicios";
 import { obtenerDetalleFactura } from "../servicios/servicios";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
-import pdfFonts from "./vfs_fonts";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 
-pdfMake.vfs = pdfFonts
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 function PdfGenerator({ onDataGenerated }) {
-
   const params = useParams();
+  const navigate = useNavigate();
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
+  const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
+
+  const uploadPDFToFirebaseStorage = async (
+    pdfBlob,
+    nit,
+    tipoDocumento,
+    consecutivo
+  ) => {
+    try {
+      const storage = getStorage();
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}`;
+      const storageRef = ref(storage, rutaArchivo);
+      await uploadBytes(storageRef, pdfBlob);
+    } catch (error) {
+      console.error("Error al subir el PDF a Firebase Storage:", error);
+    }
+  };
 
   const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
     if (data && Array.isArray(data) && data.length > 0) {
@@ -39,15 +57,20 @@ function PdfGenerator({ onDataGenerated }) {
 
       documento = documento[0];
 
+      if (documento === undefined) {
+        navigate("/");
+      }
+
       let content = [];
 
       content.push({
         image: AbacoLogobase64,
         width: 150,
-        height: 100,
+        height: 54.5,
         alignment: "center",
         margin: [0, -40, 0, 20],
       });
+
       documento.titulos.forEach((titulo) => {
         content.push({
           text: htmlToPdfmake(titulo + "<br><br>"),
@@ -63,7 +86,69 @@ function PdfGenerator({ onDataGenerated }) {
       });
 
       if (documento.bottomParagraphs) {
-        if (itemsFactura.length > 0) {
+        if (
+          itemsFactura.length > 0 &&
+          itemsFactura[0]["Costo Total"] === "N/A"
+        ) {
+          const dynamicTable = {
+            table: {
+              widths: ["20%", "20%", "40%", "20%"],
+              body: [],
+            },
+          };
+
+          dynamicTable.table.body.push([
+            { text: "Nro Factura", style: "tableHeader" },
+            { text: "Fecha Factura", style: "tableHeader" },
+            { text: "Desc Articulo", style: "tableHeader" },
+            { text: "Costo Unitario", style: "tableHeader" },
+          ]);
+
+          itemsFactura.forEach((item) => {
+            dynamicTable.table.body.push([
+              item["Nro Factura"],
+              item["Fecha Factura"],
+              item["Desc Articulo"],
+              item["Costo Unitario"].toLocaleString("es-CO", {
+                style: "currency",
+                currency: "COP",
+              }),
+            ]);
+          });
+
+          const costoTotal = itemsFactura.reduce(
+            (total, objeto) => total + objeto["Costo Unitario"],
+            0
+          );
+
+          dynamicTable.table.body.push([
+            "Total",
+            "",
+            "",
+            costoTotal.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            }),
+          ]);
+
+          content.push(dynamicTable);
+        } else if (
+          itemsFactura.length > 0 &&
+          itemsFactura[0]["Costo Unitario"] === "N/A"
+        ) {
+          const facturasAgrupadas = itemsFactura.reduce(
+            (acumulador, objeto) => {
+              const factura = objeto["Nro Factura"];
+              if (!acumulador[factura]) {
+                acumulador[factura] = [];
+              }
+              acumulador[factura].push(objeto);
+              return acumulador;
+            },
+            {}
+          );
+
+          const arraysFacturasAgrupadas = Object.values(facturasAgrupadas);
 
           const dynamicTable = {
             table: {
@@ -73,23 +158,55 @@ function PdfGenerator({ onDataGenerated }) {
           };
 
           dynamicTable.table.body.push([
-            "Nro Factura",
-            "Fecha Factura",
-            "Desc Articulo",
-            "Costo Unitario",
+            { text: "Nro Factura", style: "tableHeader" },
+            { text: "Fecha Factura", style: "tableHeader" },
+            { text: "Desc Articulo", style: "tableHeader" },
+            { text: "Costo Total", style: "tableHeader" },
           ]);
 
-          itemsFactura.forEach((item) => {
-            dynamicTable.table.body.push([
-              item["Nro Factura"],
-              item["Fecha Factura"],
-              item["Desc Articulo"],
-              item["Costo Unitario"],
-            ]);
+          let costoTotal = 0;
+
+          arraysFacturasAgrupadas.forEach((itemsFactura) => {
+            itemsFactura.forEach((item, indice, array) => {
+              if (indice === array.length - 1) {
+                costoTotal += item["Costo Total"];
+                dynamicTable.table.body.push([
+                  item["Nro Factura"],
+                  item["Fecha Factura"],
+                  item["Desc Articulo"],
+                  item["Costo Total"].toLocaleString("es-CO", {
+                    style: "currency",
+                    currency: "COP",
+                  }),
+                ]);
+              } else {
+                dynamicTable.table.body.push([
+                  item["Nro Factura"],
+                  item["Fecha Factura"],
+                  item["Desc Articulo"],
+                  "",
+                ]);
+              }
+            });
           });
 
-          content.push(dynamicTable);
+          dynamicTable.table.body.push([
+            "Total",
+            "",
+            "",
+            costoTotal.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            }),
+          ]);
 
+          content.push(dynamicTable);
+        }
+
+        if (
+          documento.bottomParagraphs !== undefined &&
+          documento.bottomParagraphs > 0
+        ) {
           documento.bottomParagraphs.forEach((paragraph) => {
             content.push({
               text: htmlToPdfmake("<br></br>" + paragraph + "<br></br>"),
@@ -176,13 +293,13 @@ function PdfGenerator({ onDataGenerated }) {
 
         content.push({
           text: htmlToPdfmake(
-            '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por' +
+            '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
               documento.revisorFiscal.designatedBy +
-              "</p><br></br><br></br>"
+              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
+              "<br></br><br></br></p>"
           ),
         });
       }
-
       content.push({
         text: htmlToPdfmake(
           "<br></br><br></br><br></br>Elaboró" + documento.elaborated
@@ -193,39 +310,15 @@ function PdfGenerator({ onDataGenerated }) {
         text: "Aprobó" + documento.approved,
         style: "informacionRevisado",
       });
-      content.push({
-        text: htmlToPdfmake(
-          "Revisó" + documento.revised + "<br></br><br></br>"
-        ),
-        style: "informacionRevisado",
-      });
-      content.push({
-        text: htmlToPdfmake(
-          '<p style="text-align: left; font-size: 8pt;">' +
-            documento.address[0] +
-            '</p><p style="text-align: right; font-size: 8pt; ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-            documento.contacto[0] +
-            "</p>"
-        ),
-      });
-      content.push({
-        text: htmlToPdfmake(
-          '<p style="text-align: left; font-size: 8pt;">' +
-            documento.address[1] +
-            '</p><p style="text-align: right; font-size: 8pt; ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-            documento.contacto[1] +
-            "</p>"
-        ),
-      });
-      content.push({
-        text: htmlToPdfmake(
-          '<p style="text-align: left; font-size: 8pt;">' +
-            documento.address[2] +
-            '</p><p style="text-align: right; font-size: 8pt; color:white">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-            documento.contacto[0] +
-            "</p>"
-        ),
-      });
+
+      if (tipoDocumento !== "constancia") {
+        content.push({
+          text: htmlToPdfmake(
+            "Revisó" + documento.revised + "<br></br><br></br>"
+          ),
+          style: "informacionRevisado",
+        });
+      }
 
       const documentDefinition = {
         content,
@@ -263,6 +356,53 @@ function PdfGenerator({ onDataGenerated }) {
           imagenFirmas: {
             border: "hidden",
           },
+          footer: {
+            fontSize: 10,
+            bold: true,
+            alignment: "center",
+            margin: [20, -10, 20, 20],
+          },
+          tableHeader: {
+            bold: true,
+            fontSize: 12,
+            alignment: "left",
+          },
+        },
+        footer: function (paginaActual, paginaSiguiente) {
+          return {
+            columns: [
+              {
+                text:
+                  documento.address[0] +
+                  "\n" +
+                  "Telefono: " +
+                  documento.address[1] +
+                  "\n" +
+                  documento.address[2],
+                fontSize: 8,
+                alignment: "left",
+                margin: [20, 8, 0, 0],
+              },
+              {
+                text:
+                  "\nPágina " +
+                  paginaActual.toString() +
+                  " de " +
+                  paginaSiguiente,
+                fontSize: 8,
+                bold: true,
+                alignment: "center",
+                margin: [0, 8, 0, 0],
+              },
+              {
+                text: documento.contacto[0] + "\n" + documento.contacto[1],
+                fontSize: 8,
+                alignment: "right",
+                margin: [0, 8, 20, 0],
+              },
+            ],
+            style: "footer",
+          };
         },
       };
 
@@ -270,6 +410,12 @@ function PdfGenerator({ onDataGenerated }) {
 
       pdfDoc.getBlob((pdfBlob) => {
         onDataGenerated(pdfBlob);
+        uploadPDFToFirebaseStorage(
+          pdfBlob,
+          infoDocumento["NIT"],
+          tipoDocumento,
+          documento["hoja_No"]
+        );
       });
     }
   };
@@ -279,51 +425,62 @@ function PdfGenerator({ onDataGenerated }) {
       try {
         if (typeof params.certificados_consecutivo !== "undefined") {
           let opciones = {
-            method:"POST"
-          }
+            method: "POST",
+          };
           let parametros = new URLSearchParams({
-            authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CERTIFICADOS_INFORMACION
-          })
+            authKey:
+              VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CERTIFICADOS_INFORMACION,
+          });
 
-          const respuestaDatos = await fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS_INFORMACION+"?"+parametros,opciones)
-          if (!respuestaDatos.ok) {
-                 throw new Error("Error en la solicitud");
-              }
-          const jsonData = await respuestaDatos.json();
-
-          const documentos = await obtenerCertificados();
-          const documento = documentos.find(
-            (doc) => doc["Hoja No. "] == params.certificados_consecutivo
+          const respuestaDatos = await fetch(
+            VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS_INFORMACION +
+              "?" +
+              parametros,
+            opciones
           );
+          if (!respuestaDatos.ok) {
+            throw new Error("Error en la solicitud");
+          }
+          const jsonData = await respuestaDatos.json();
 
           const itemsFactura = await obtenerDetalleFactura();
-          const items = itemsFactura.filter(
-            (item) => item["Hoja No. "] == params.certificados_consecutivo
-          );
+          let items;
 
-
-
-          generatePDF(jsonData, documento, "certificado", items);
-        } else if (typeof params.constancias_consecutivo !== "undefined") {
-
-          let opciones = {
-            method:"POST"
+          /* Quitar esta validación cuando se ajustes las apis
+             y la información este acorde en todas
+             cuando se visualice el documento 97, se va a mostrar
+             el detalle de la factura del documento 263
+             Para hacer pruebas mostrando la tabla costo total
+          */
+          if (params.certificados_consecutivo == 97) {
+            // 263 detalle de factura de otro documento, solo para hacer pruebas
+            items = itemsFactura.filter((item) => item["Hoja No. "] == 263);
+          } else {
+            items = itemsFactura.filter(
+              (item) => item["Hoja No. "] == params.certificados_consecutivo
+            );
           }
+
+          generatePDF(jsonData, infoDocumento, "certificado", items);
+        } else if (typeof params.constancias_consecutivo !== "undefined") {
+          let opciones = {
+            method: "POST",
+          };
           let parametros = new URLSearchParams({
-            authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION
-          })
-          const respuestaDatos = await fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION+"?"+parametros,opciones)
+            key: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
+          });
+          const respuestaDatos = await fetch(
+            VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION +
+              "?" +
+              parametros,
+            opciones
+          );
           if (!respuestaDatos.ok) {
-                 throw new Error("Error en la solicitud ");
-              }
+            throw new Error("Error en la solicitud ");
+          }
           const jsonData = await respuestaDatos.json();
 
-          const documentos = await obtenerConstancias();
-          const documento = documentos.find(
-            (doc) => doc[" Hoja_No"] == params.constancias_consecutivo
-          );
-
-          generatePDF(jsonData, documento, "constancia");
+          generatePDF(jsonData, infoDocumento, "constancia");
         }
       } catch (error) {
         console.error("Error al obtener datos:", error);
