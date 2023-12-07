@@ -55,7 +55,7 @@ function AppRoutes() {
     Swal.fire({
       icon: 'error',
       title: 'Error de inicio de sesión',
-      text: `El correo electrónico (${email}) no está registrado.`,
+      text: `El correo electrónico (${email}) no tiene permiso para este inicio.`,
     });
   };
 

@@ -34,7 +34,7 @@ function PdfGenerator({ onDataGenerated }) {
     try {
       const storage = getStorage();
 
-      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}`;
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
     } catch (error) {

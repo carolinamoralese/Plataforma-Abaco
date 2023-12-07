@@ -9,7 +9,7 @@ export function Certificate() {
   const [selectedOption, setSelectedOption] = useState("");
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
-  const usuarioRol = localStorage.getItem('usuarioRol');
+  const usuarioRol = localStorage.getItem("usuarioRol");
   const propiedadEmpresa = "EMPRESA ";
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
@@ -151,6 +151,15 @@ export function Certificate() {
     <main>
       <Barrasuperior />
       <Navbar />
+      <div className="flex justify-end mr-10 mt-4">
+        <div className="mb-8">
+          <CreateButton
+            colorClass="bg-verde w-150 h-10 text-white"
+            onClick={() => window.location.reload()}
+            text="Actualizar"
+          />
+        </div>
+      </div>
       <div
         style={certificateStyle}
         className="relative mt-5 flex flex-col items-center ml-40"

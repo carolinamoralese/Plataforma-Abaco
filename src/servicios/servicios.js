@@ -24,7 +24,7 @@ export const obtenerConstancias = () => {
     })
 }
 
-export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, correo) => {
+export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
     let opciones = {
         method: "POST",
         
@@ -34,7 +34,7 @@ export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, co
         consecutivo,
         dataToAdd: nuevoEstado,
         dataToAdd2: correo,
-        dataToAdd3: "PDTE POR ENVIAR COMENTARIO REAL",
+        dataToAdd3: motivoRechazo,
     })
 
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_LOGISTICA+"?"+parametros, opciones)
@@ -45,7 +45,7 @@ export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, co
     })
 }
 
-export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo, correo) => {
+export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
     let opciones = {
         method: "POST",
         
@@ -55,7 +55,7 @@ export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo,
         dataToAdd: nuevoEstado,
         consecutivo,
         dataToAdd2: correo,
-        dataToAdd3: "PDTE POR ENVIAR COMENTARIO REAL",
+        dataToAdd3: motivoRechazo,
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_CONTABILIDAD+"?"+parametros, opciones)
@@ -66,7 +66,7 @@ export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo,
     })
 }
 
-export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo, correo) => {
+export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
     let opciones = {
         method: "POST",
         
@@ -76,7 +76,7 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
         dataToAdd: nuevoEstado,
         consecutivo,
         dataToAdd2: correo,
-        dataToAdd3: "PDTE POR ENVIAR COMENTARIO REAL",
+        dataToAdd3: motivoRechazo,
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_REVISOR_FISCAL+"?"+parametros, opciones)
@@ -87,7 +87,7 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
     })
 }
 
-export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo) => {
+export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
     let opciones = {
         method: "POST",
         
@@ -97,7 +97,7 @@ export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, cor
         dataToAdd: nuevoEstado,
         consecutivo,
         dataToAdd2: correo,
-        dataToAdd3: "PDTE POR ENVIAR COMENTARIO REAL",
+        dataToAdd3: motivoRechazo,
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_LOGISTICA+"?"+parametros, opciones)

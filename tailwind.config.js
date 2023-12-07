@@ -11,6 +11,7 @@ export default {
       'gris-oscuro':'#4d4d4d',
       'verde-oscuro': '#065624',
       'verde-claro': '#8cc63f',
+      'verde':"#095624",
       'amarillo': '#d2de38',
       'naranja': '#f58634',
       'negro': '#272323',

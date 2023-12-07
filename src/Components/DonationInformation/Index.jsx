@@ -3,9 +3,23 @@ import { MDBDataTableV5 } from "mdbreact";
 
 
 export function DonationInformation({ documentos,tipoDocumento }) {
+  console.log(documentos,101)
   documentos.map((documento) => {
     let ruta = "/pdf-view/" + tipoDocumento + "/" + documento.Consecutivo
     documento.accion = <a href={ruta}>Ver</a>;
+
+    if(documento.Nota_Logistica != undefined && documento.Nota_Logistica !== ""){
+      documento.Observaciones = documento.Nota_Logistica
+    }else if(documento.Nota_logistica != undefined && documento.Nota_logistica !== ""){
+      documento.Observaciones = documento.Nota_logistica
+    }else if(documento.Nota_Contabilidad != undefined && documento.Nota_Contabilidad !== ""){
+      documento.Observaciones = documento.Nota_Contabilidad
+    }else if(documento.Nota_Fiscal != undefined && documento.Nota_Fiscal !== ""){
+      documento.Observaciones = documento.Nota_Fiscal
+    }else{
+      documento.Observaciones = ""
+    }
+    
     return documento;
   });
 
@@ -25,7 +39,7 @@ export function DonationInformation({ documentos,tipoDocumento }) {
       },
       {
         label: "Empresa",
-        field: "EMPRESA ",
+        field: "Empresa",
         sort: "asc",
         width: 300,
       },
@@ -40,6 +54,12 @@ export function DonationInformation({ documentos,tipoDocumento }) {
         field: "accion",
         sort: "asc",
         width: 100,
+      },
+      {
+        label: "Observaciones",
+        field: "Observaciones",
+        sort: "asc",
+        width: 150,
       },
     ],
     rows: documentos,
