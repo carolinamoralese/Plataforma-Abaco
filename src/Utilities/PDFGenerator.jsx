@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import "pdfmake/build/vfs_fonts";
+import * as pdfMake from "pdfmake/build/pdfmake";
+import 'pdfmake/build/vfs_fonts';
 import PropTypes from "prop-types";
 import htmlToPdfmake from "html-to-pdfmake";
 import { useNavigate } from "react-router-dom";
@@ -12,10 +13,10 @@ import { obtenerDetalleFactura } from "../servicios/servicios";
 import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import pdfFonts from "./vfs_fonts";
 
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
+pdfMake.vfs = pdfFonts
 
 function PdfGenerator({ onDataGenerated }) {
   const params = useParams();
@@ -24,6 +25,8 @@ function PdfGenerator({ onDataGenerated }) {
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
+
+
 
   const uploadPDFToFirebaseStorage = async (
     pdfBlob,
@@ -132,6 +135,8 @@ function PdfGenerator({ onDataGenerated }) {
           ]);
 
           content.push(dynamicTable);
+
+          content.push({ text: "\n\n", fontSize: 20 });
         } else if (
           itemsFactura.length > 0 &&
           itemsFactura[0]["Costo Unitario"] === "N/A"
@@ -155,6 +160,7 @@ function PdfGenerator({ onDataGenerated }) {
               widths: ["20%", "20%", "40%", "20%"],
               body: [],
             },
+            layout: "noBorders",
           };
 
           dynamicTable.table.body.push([
@@ -168,23 +174,30 @@ function PdfGenerator({ onDataGenerated }) {
 
           arraysFacturasAgrupadas.forEach((itemsFactura) => {
             itemsFactura.forEach((item, indice, array) => {
-              if (indice === array.length - 1) {
+              const posicionMitad = Math.floor(array.length / 2);
+              if (indice === posicionMitad) {
                 costoTotal += item["Costo Total"];
+
                 dynamicTable.table.body.push([
                   item["Nro Factura"],
                   item["Fecha Factura"],
                   item["Desc Articulo"],
-                  item["Costo Total"].toLocaleString("es-CO", {
-                    style: "currency",
-                    currency: "COP",
-                  }),
+                  {
+                    text: item["Costo Total"].toLocaleString("es-CO", {
+                      style: "currency",
+                      currency: "COP",
+                    }),
+                  },
                 ]);
               } else {
                 dynamicTable.table.body.push([
                   item["Nro Factura"],
                   item["Fecha Factura"],
                   item["Desc Articulo"],
-                  "",
+                  { text: "", style: {
+                    _maring: [1,1,1,1],
+                    layout: "noBorders",
+                  } },
                 ]);
               }
             });
@@ -201,6 +214,8 @@ function PdfGenerator({ onDataGenerated }) {
           ]);
 
           content.push(dynamicTable);
+
+          content.push({ text: "\n\n", fontSize: 20 });
         }
 
         if (
@@ -320,6 +335,9 @@ function PdfGenerator({ onDataGenerated }) {
         });
       }
 
+
+     
+
       const documentDefinition = {
         content,
         styles: {
@@ -404,6 +422,8 @@ function PdfGenerator({ onDataGenerated }) {
             style: "footer",
           };
         },
+        watermark: {text: 'ANULADO', color: 'red', opacity: 0.3, bold: true, italics: false},
+        
       };
 
       const pdfDoc = pdfMake.createPdf(documentDefinition);

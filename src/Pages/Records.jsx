@@ -1,28 +1,44 @@
 import { useState, useEffect } from "react";
-import { Barrasuperior } from "../Components/Navbar/Index";
-import { Navbar } from "../Components/Navbar/Index";
+import { Barrasuperior } from "../Components/Navbar/index";
+import { Navbar } from "../Components/Navbar/index";
 import { CreateButton } from "../Components/Button/Button";
 import { obtenerConstancias } from "../servicios/servicios";
 import { DonationInformation } from "../Components/DonationInformation/Index";
 import Group from "../assets/Group.png";
+import { FaSyncAlt, FaSpinner } from "react-icons/fa";
 
 export function Records() {
-  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedOption, setSelectedOption] = useState("Pendientes");
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
-  const usuarioRol = localStorage.getItem('usuarioRol');
+  const [forceUpdate, setForceUpdate] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [cargandoDocumentos, setCargandoDocumentos] = useState(true);
+  const usuarioRol = localStorage.getItem("usuarioRol");
   const propiedadEmpresa = "Empresa";
   const rolUsuariologistica = "R_Logistica";
+
+  const handleRefreshClick = () => {
+    setIsUpdating(true);
+    setForceUpdate((prev) => !prev);
+  };
 
   useEffect(() => {
     obtenerConstancias()
       .then((documentos) => {
         setDocumentos(documentos);
+        setIsUpdating(false);
+        filtrarDocumentos(documentos, usuarioRol, "Pendientes").then(
+          (documentosFiltrados) => setDocumentosFiltrados(documentosFiltrados),
+          setCargandoDocumentos(false)
+        );
       })
       .catch((error) => {
         console.error(error);
+        setIsUpdating(false);
+        setCargandoDocumentos(false);
       });
-  }, []);
+  }, [forceUpdate, isUpdating, usuarioRol]);
 
   function filtrarDocumentos(documentos, rolUsuario, estado) {
     return new Promise((resolve) => {
@@ -54,7 +70,7 @@ export function Records() {
 
       if (rolUsuario == "Contabilidad") {
         if (estado == "Pendientes") {
-          documentosFiltrados = []
+          documentosFiltrados = [];
         } else if (estado == "Aceptados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
@@ -72,7 +88,7 @@ export function Records() {
 
       if (rolUsuario == "Fiscal") {
         if (estado == "Pendientes") {
-          documentosFiltrados = []
+          documentosFiltrados = [];
         } else if (estado == "Aceptados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
@@ -122,6 +138,16 @@ export function Records() {
     <div>
       <Barrasuperior />
       <Navbar />
+      <div className="flex justify-end mr-10 mt-4 relative">
+        <div className="mb-8 mr-10">
+          <FaSyncAlt onClick={handleRefreshClick} size={30} />{" "}
+          {isUpdating && (
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-center mt-2">
+              <p className="bg-white rounded-lg p-2">Actualizando...</p>
+            </div>
+          )}
+        </div>
+      </div>
       <div
         style={certificateStyle}
         className="relative mt-5 flex flex-col items-center ml-40"
@@ -160,12 +186,27 @@ export function Records() {
             ></CreateButton>
           </div>
         </div>
-        <div>
-          <DonationInformation
-            documentos={documentosFiltrados}
-            tipoDocumento={"constancias"}
-          ></DonationInformation>
-        </div>
+        {cargandoDocumentos ? (
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: "bold",
+              marginTop: "60px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <FaSpinner className="animate-spin" size={30} />
+            Cargando documentos
+          </div>
+        ) : (
+          <div>
+            <DonationInformation
+              documentos={documentosFiltrados}
+              tipoDocumento={"constancias"}
+            ></DonationInformation>
+          </div>
+        )}
       </div>
     </div>
   );

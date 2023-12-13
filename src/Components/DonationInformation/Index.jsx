@@ -2,11 +2,13 @@ import React from "react";
 import { MDBDataTableV5 } from "mdbreact";
 
 
+
 export function DonationInformation({ documentos,tipoDocumento }) {
-  console.log(documentos,101)
   documentos.map((documento) => {
     let ruta = "/pdf-view/" + tipoDocumento + "/" + documento.Consecutivo
     documento.accion = <a href={ruta}>Ver</a>;
+
+   
 
     if(documento.Nota_Logistica != undefined && documento.Nota_Logistica !== ""){
       documento.Observaciones = documento.Nota_Logistica

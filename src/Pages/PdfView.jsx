@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navbar, Barrasuperior } from "../Components/Navbar/Index";
+import { Navbar, Barrasuperior } from "../Components/Navbar/index";
 import PdfGenerator from "../Utilities/PDFGenerator";
 import Group from "../assets/Group.png";
 import { CreateButton } from "../Components/Button/Button";

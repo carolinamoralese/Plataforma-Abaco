@@ -1,29 +1,55 @@
 import { useState, useEffect } from "react";
-import { Barrasuperior, Navbar } from "../Components/Navbar/Index";
+import { Barrasuperior, Navbar } from "../Components/Navbar/index";
 import { CreateButton } from "../Components/Button/Button";
 import { DonationInformation } from "../Components/DonationInformation/Index";
 import { obtenerCertificados } from "../servicios/servicios";
 import Group from "../assets/Group.png";
+import { FaSyncAlt, FaSpinner } from "react-icons/fa";
 
 export function Certificate() {
-  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedOption, setSelectedOption] = useState("Pendientes");
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
+  const [forceUpdate, setForceUpdate] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [cargandoDocumentos, setCargandoDocumentos] = useState(true);
   const usuarioRol = localStorage.getItem("usuarioRol");
   const propiedadEmpresa = "EMPRESA ";
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
 
+  const handleRefreshClick = () => {
+    setIsUpdating(true);
+    setForceUpdate((prev) => !prev);
+  };
+
   useEffect(() => {
     obtenerCertificados()
       .then((documentos) => {
         setDocumentos(documentos);
+        setIsUpdating(false);
+        filtrarDocumentos(documentos, usuarioRol, "Pendientes").then(
+          (documentosFiltrados) => setDocumentosFiltrados(documentosFiltrados),
+          setCargandoDocumentos(false)
+        );
       })
       .catch((error) => {
         console.error(error);
+        setIsUpdating(false);
+        setCargandoDocumentos(false);
       });
-  }, []);
+  }, [forceUpdate, isUpdating, usuarioRol]);
+
+  // useEffect(() => {
+  //   obtenerCertificados()
+  //     .then((documentos) => {
+  //       setDocumentos(documentos);
+  //     })
+  //     .catch((error) => {
+  //       console.error(error);
+  //     });
+  // }, []);
 
   function filtrarDocumentos(documentos, rolUsuario, estado) {
     return new Promise((resolve) => {
@@ -151,13 +177,14 @@ export function Certificate() {
     <main>
       <Barrasuperior />
       <Navbar />
-      <div className="flex justify-end mr-10 mt-4">
-        <div className="mb-8">
-          <CreateButton
-            colorClass="bg-verde w-150 h-10 text-white"
-            onClick={() => window.location.reload()}
-            text="Actualizar"
-          />
+      <div className="flex justify-end mr-10 mt-4 relative">
+        <div className="mb-8 mr-10">
+          <FaSyncAlt onClick={handleRefreshClick} size={30} />{" "}
+          {isUpdating && (
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-center mt-2">
+              <p className="bg-white rounded-lg p-2">Actualizando...</p>
+            </div>
+          )}
         </div>
       </div>
       <div
@@ -198,12 +225,27 @@ export function Certificate() {
             ></CreateButton>
           </div>
         </div>
-        <div>
-          <DonationInformation
-            documentos={documentosFiltrados}
-            tipoDocumento={"certificados"}
-          ></DonationInformation>
-        </div>
+        {cargandoDocumentos ? (
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: "bold",
+              marginTop: "60px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <FaSpinner className="animate-spin" size={30} />
+            Cargando documentos pendientes
+          </div>
+        ) : (
+          <div>
+            <DonationInformation
+              documentos={documentosFiltrados}
+              tipoDocumento={"certificados"}
+            ></DonationInformation>
+          </div>
+        )}
       </div>
     </main>
   );
