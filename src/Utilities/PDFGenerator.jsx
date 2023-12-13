@@ -160,7 +160,7 @@ function PdfGenerator({ onDataGenerated }) {
               widths: ["20%", "20%", "40%", "20%"],
               body: [],
             },
-            layout: "noBorders",
+            //layout: "noBorders",
           };
 
           dynamicTable.table.body.push([
@@ -174,8 +174,8 @@ function PdfGenerator({ onDataGenerated }) {
 
           arraysFacturasAgrupadas.forEach((itemsFactura) => {
             itemsFactura.forEach((item, indice, array) => {
-              const posicionMitad = Math.floor(array.length / 2);
-              if (indice === posicionMitad) {
+              //const posicionMitad = Math.floor(array.length / 2);
+              if (indice === 0) {
                 costoTotal += item["Costo Total"];
 
                 dynamicTable.table.body.push([
@@ -191,13 +191,10 @@ function PdfGenerator({ onDataGenerated }) {
                 ]);
               } else {
                 dynamicTable.table.body.push([
-                  item["Nro Factura"],
+                  "",
                   item["Fecha Factura"],
                   item["Desc Articulo"],
-                  { text: "", style: {
-                    _maring: [1,1,1,1],
-                    layout: "noBorders",
-                  } },
+                  "",
                 ]);
               }
             });
@@ -334,6 +331,7 @@ function PdfGenerator({ onDataGenerated }) {
           style: "informacionRevisado",
         });
       }
+      
 
 
      
@@ -422,9 +420,11 @@ function PdfGenerator({ onDataGenerated }) {
             style: "footer",
           };
         },
-        watermark: {text: 'ANULADO', color: 'red', opacity: 0.3, bold: true, italics: false},
-        
       };
+
+      if(documento["hoja_No"] == 97){
+        documentDefinition["watermark"] = {text: 'ANULADO', color: 'red', opacity: 0.3, bold: true, italics: false}
+      }
 
       const pdfDoc = pdfMake.createPdf(documentDefinition);
 

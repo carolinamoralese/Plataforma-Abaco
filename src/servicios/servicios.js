@@ -24,7 +24,7 @@ export const obtenerConstancias = () => {
     })
 }
 
-export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
+export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -45,7 +45,7 @@ export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, co
     })
 }
 
-export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
+export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -66,7 +66,7 @@ export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo,
     })
 }
 
-export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
+export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -87,7 +87,7 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
     })
 }
 
-export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo) => {
+export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         

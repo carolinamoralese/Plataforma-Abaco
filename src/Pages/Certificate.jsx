@@ -236,7 +236,7 @@ export function Certificate() {
             }}
           >
             <FaSpinner className="animate-spin" size={30} />
-            Cargando documentos pendientes
+            Cargando documentos
           </div>
         ) : (
           <div>
