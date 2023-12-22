@@ -142,3 +142,23 @@ export const obtenerDetalleFactura = () => {
         throw error.mensaje;
     })
 }
+
+export const anularCertificado = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+    let opciones = {
+        method: "POST",
+        
+      };
+      let parametros = new URLSearchParams({
+        authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_ANULAR_CERTIFICADOS,
+        dataToAdd: nuevoEstado,
+        consecutivo,
+        dataToAdd2: correo,
+        dataToAdd3: motivoRechazo,
+    })
+    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_ANULAR_CERTIFICADOS+"?"+parametros, opciones)
+    .then((respuesta) => respuesta)
+    .catch((error) => {
+        console.log(error)
+        throw error.mensaje;
+    })
+}

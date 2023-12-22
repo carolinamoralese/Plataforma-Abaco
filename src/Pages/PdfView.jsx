@@ -8,6 +8,7 @@ import { modificarEstadoCertificadoLogistica } from "../servicios/servicios";
 import { modificarEstadoCertificadoContabilidad } from "../servicios/servicios";
 import { modificarEstadoCertificadoRevisorFiscal } from "../servicios/servicios";
 import { modificarEstadoConstanciaLogistica } from "../servicios/servicios";
+import { anularCertificado } from "../servicios/servicios";
 import {
   obtenerCertificados,
   obtenerConstancias,
@@ -23,10 +24,13 @@ export function PdfView() {
   const params = useParams();
   const rolUsuario = localStorage.getItem("usuarioRol");
   const [mostrarBotones, setMostrarBotones] = useState(false);
+  const [infoDocumento, setInfoDocumento] = useState(null);
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
+  const rolUsuarioAnulador = "R_Anulado";
   const userEmail = localStorage.getItem("userEmail");
+
 
   const showPDF = (pdfBlob) => {
     setPdfData(URL.createObjectURL(pdfBlob));
@@ -34,56 +38,71 @@ export function PdfView() {
   const aceptar = "SI";
   const rechazar = "NO";
 
-  const fetchData = async () => {
-    try {
-      if (typeof params.certificados_consecutivo !== "undefined") {
-        const documentos = await obtenerCertificados();
-        const documento = documentos.find(
-          (doc) => doc["Hoja_No"] == params.certificados_consecutivo
-        );
-        localStorage.setItem("infoDocumento", JSON.stringify(documento));
-        if (
-          rolUsuario == "Logistica" &&
-          documento[rolUsuariologistica] === ""
-        ) {
-          setMostrarBotones(true);
-        } else if (
-          rolUsuario == "Contabilidad" &&
-          documento[rolUsuariologistica].toUpperCase() === "SI" &&
-          documento[rolUsuarioCotabilidad] === ""
-        ) {
-          setMostrarBotones(true);
-        } else if (
-          rolUsuario == "Fiscal" &&
-          documento[rolUsuariologistica].toUpperCase() === "SI" &&
-          documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-          documento[rolUsuarioRevisorFiscal] === ""
-        ) {
-          setMostrarBotones(true);
-        }
-      } else if (typeof params.constancias_consecutivo !== "undefined") {
-        const documentos = await obtenerConstancias();
-        const documento = documentos.find(
-          (doc) => doc["Hoja_No"] == params.constancias_consecutivo
-        );
-        localStorage.setItem("infoDocumento", JSON.stringify(documento));
-        if (
-          rolUsuario == "Logistica" &&
-          documento[rolUsuariologistica] === ""
-        ) {
-          setMostrarBotones(true);
-        }
-      }
-    } catch (error) {
-      console.error("Error al obtener datos:", error);
-    }
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (typeof params.certificados_consecutivo !== "undefined") {
+          const documentos = await obtenerCertificados();
+          const documento = await documentos.find(
+            (doc) => doc["Hoja_No"] == params.certificados_consecutivo
+          );
 
-  if (userEmail) {
-    fetchData();
-  } else {
-    navigate("/");
-  }
+          setInfoDocumento(documento)
+
+          if (
+            rolUsuario == "Logistica" &&
+            documento[rolUsuariologistica] === ""
+          ) {
+            setMostrarBotones(true);
+          } else if (
+            rolUsuario == "Contabilidad" &&
+            documento[rolUsuariologistica].toUpperCase() === "SI" &&
+            documento[rolUsuarioCotabilidad] === ""
+          ) {
+            setMostrarBotones(true);
+          } else if (
+            rolUsuario == "Fiscal" &&
+            documento[rolUsuariologistica].toUpperCase() === "SI" &&
+            documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+            documento[rolUsuarioRevisorFiscal] === ""
+          ) {
+            setMostrarBotones(true);
+          } else if(rolUsuario == "Administracion" && documento[rolUsuarioAnulador].toUpperCase() === "SI"){
+            setMostrarBotones(false);
+
+          }else if (
+            rolUsuario == "Administracion" &&
+            documento[rolUsuariologistica].toUpperCase() === "SI" &&
+            documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+            documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
+          ) {
+            setMostrarBotones(true);
+          }
+        } else if (typeof params.constancias_consecutivo !== "undefined") {
+          const documentos = await obtenerConstancias();
+          const documento = documentos.find(
+            (doc) => doc["Hoja_No"] == params.constancias_consecutivo
+          );
+          setInfoDocumento(documento)
+          if (
+            rolUsuario == "Logistica" &&
+            documento[rolUsuariologistica] === ""
+          ) {
+            setMostrarBotones(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+      }
+    };
+
+    if (userEmail) {
+      fetchData();
+    } else {
+      navigate("/");
+    }
+  }, []); 
+
 
   function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (nuevoEstado === rechazar) {
@@ -101,23 +120,23 @@ export function PdfView() {
           }
         },
         customClass: {
-          confirmButton: "bg-verde-claro rounded-3xl p-2 font-bold text-m w-32", 
-          cancelButton: "bg-gris-claro rounded-3xl p-2 font-bold text-m ml-4 w-32", 
+          confirmButton: "bg-verde-claro rounded-3xl p-2 font-bold text-m w-32",
+          cancelButton:
+            "bg-gris-claro rounded-3xl p-2 font-bold text-m ml-4 w-32",
         },
 
         didRender: (popup) => {
           const confirmButton = popup.querySelector(".swal2-confirm");
           const cancelButton = popup.querySelector(".swal2-cancel");
-    
+
           confirmButton.classList.remove("swal2-styled");
           cancelButton.classList.remove("swal2-styled");
         },
-
       }).then((result) => {
         if (result.isConfirmed) {
           const motivoRechazo = result.value;
           console.log("Motivo de rechazo:", motivoRechazo);
-          
+
           if (typeof params.certificados_consecutivo !== "undefined") {
             if (rolDelUsuario == "Logistica") {
               modificarEstadoCertificadoLogistica(
@@ -149,7 +168,52 @@ export function PdfView() {
               motivoRechazo
             );
           }
-          
+
+          setIsPopupOpen(true);
+        }
+      });
+    } else if (nuevoEstado === "ANULAR") {
+      Swal.fire({
+        title: "Motivo de anulación",
+        input: "textarea",
+        inputLabel: "Por favor, ingrese el motivo de anulación",
+        inputPlaceholder: "Escribe aquí...",
+        showCancelButton: true,
+        cancelButtonText: "Cancelar",
+        confirmButtonText: "Enviar",
+        inputValidator: (value) => {
+          if (!value) {
+            return "¡Debes ingresar un motivo!";
+          }
+        },
+        customClass: {
+          confirmButton: "bg-verde-claro rounded-3xl p-2 font-bold text-m w-32",
+          cancelButton:
+            "bg-gris-claro rounded-3xl p-2 font-bold text-m ml-4 w-32",
+        },
+
+        didRender: (popup) => {
+          const confirmButton = popup.querySelector(".swal2-confirm");
+          const cancelButton = popup.querySelector(".swal2-cancel");
+
+          confirmButton.classList.remove("swal2-styled");
+          cancelButton.classList.remove("swal2-styled");
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const motivoAnulacion = result.value;
+          console.log("Motivo de anulación:", motivoAnulacion);
+
+          if (typeof params.certificados_consecutivo !== "undefined") {
+            if (rolDelUsuario == "Administracion") {
+              anularCertificado(
+                "SI",
+                params.certificados_consecutivo,
+                userEmail,
+                motivoAnulacion
+              );
+            }
+          }
           setIsPopupOpen(true);
         }
       });
@@ -216,33 +280,41 @@ export function PdfView() {
         </div>
 
         <div className="mt-4">
-          <PdfGenerator onDataGenerated={showPDF} /> {/* Generar PDF */}
+          <PdfGenerator onDataGenerated={showPDF} infoDocumento={infoDocumento} /> {/* Generar PDF */}
         </div>
         {mostrarBotones && (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            {/* <div className="mr-4 mb-4">
-              <CreateButton
-                colorClass="bg-naranja w-150 h-10"
-                onClick={() => window.location.reload()}
-                text="Actualizar"
-              />
-            </div> */}
-            <div className="mr-4 mb-4">
-              <CreateButton
-                colorClass="bg-verde-claro w-150 h-10"
-                selected={false}
-                onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
-                text="Aceptar"
-              ></CreateButton>
-            </div>
-            <div className="mr-4 mb-4">
-              <CreateButton
-                colorClass="bg-gris-claro w-150 h-10"
-                selected={false}
-                onClick={() => cambiarEstadoDocumento(rechazar, rolUsuario)}
-                text="Rechazar"
-              ></CreateButton>
-            </div>
+            {rolUsuario != "Administracion" && (
+              <div className="mr-4 mb-4">
+                <CreateButton
+                  colorClass="bg-verde-claro w-150 h-10"
+                  selected={false}
+                  onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                  text="Aceptar"
+                ></CreateButton>
+              </div>
+            )}
+            {rolUsuario != "Administracion" && (
+              <div className="mr-4 mb-4">
+                <CreateButton
+                  colorClass="bg-gris-claro w-150 h-10"
+                  selected={false}
+                  onClick={() => cambiarEstadoDocumento(rechazar, rolUsuario)}
+                  text="Rechazar"
+                ></CreateButton>
+              </div>
+            )}
+
+            {rolUsuario == "Administracion" && (
+              <div className="mr-4 mb-4">
+                <CreateButton
+                  colorClass="bg-naranja w-150 h-10"
+                  selected={false}
+                  onClick={() => cambiarEstadoDocumento("ANULAR", rolUsuario)}
+                  text="Anular"
+                ></CreateButton>
+              </div>
+            )}
           </div>
         )}
 

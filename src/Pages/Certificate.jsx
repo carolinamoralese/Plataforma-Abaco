@@ -7,17 +7,22 @@ import Group from "../assets/Group.png";
 import { FaSyncAlt, FaSpinner } from "react-icons/fa";
 
 export function Certificate() {
-  const [selectedOption, setSelectedOption] = useState("Pendientes");
+  const usuarioRol = localStorage.getItem("usuarioRol");
+  const [selectedOption, setSelectedOption] = useState(
+    localStorage.getItem("usuarioRol") === "Administracion"
+      ? "Firmados"
+      : "Pendientes"
+  );
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
   const [forceUpdate, setForceUpdate] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [cargandoDocumentos, setCargandoDocumentos] = useState(true);
-  const usuarioRol = localStorage.getItem("usuarioRol");
   const propiedadEmpresa = "EMPRESA ";
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
+  const rolUsuarioAnular = "R_Anulado";
 
   const handleRefreshClick = () => {
     setIsUpdating(true);
@@ -58,6 +63,16 @@ export function Certificate() {
       documentosFiltrados = documentos.filter(
         (documento) => !["#N/A", ""].includes(documento[propiedadEmpresa])
       );
+
+      if (estado == "Anulados") {
+        documentosFiltrados = documentosFiltrados.filter(
+          (documento) => documento[rolUsuarioAnular].toUpperCase() === "SI"
+        );
+      } else {
+        documentosFiltrados = documentosFiltrados.filter(
+          (documento) => documento[rolUsuarioAnular].toUpperCase() === ""
+        );
+      }
 
       if (rolUsuario == "Logistica") {
         if (estado == "Pendientes") {
@@ -146,6 +161,32 @@ export function Certificate() {
           );
         }
       }
+
+      if (rolUsuario == "Administracion") {
+        if (estado == "Pendientes") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuariologistica].toUpperCase() === "SI" &&
+              documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+              documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
+          );
+        } else if (estado == "Firmados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuariologistica].toUpperCase() === "SI" &&
+              documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+              documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
+          );
+        } else if (estado == "Rechazados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuariologistica].toUpperCase() === "NO" ||
+              documento[rolUsuarioCotabilidad].toUpperCase() === "NO" ||
+              documento[rolUsuarioRevisorFiscal].toUpperCase() === "NO"
+          );
+        }
+      }
+
       resolve(documentosFiltrados);
     });
   }
@@ -192,22 +233,28 @@ export function Certificate() {
         className="relative mt-5 flex flex-col items-center ml-40"
       >
         <div className="flex justify-center">
-          <div className="mr-4">
-            <CreateButton
-              colorClass="bg-naranja w-fit h-20"
-              selected={selectedOption === "Pendientes"}
-              onClick={() => handleButtonClick("Pendientes")}
-              text="Pendientes"
-            ></CreateButton>
-          </div>
-          <div className="mr-4">
-            <CreateButton
-              colorClass="bg-verde-claro w-fit h-20"
-              selected={selectedOption === "Aceptados"}
-              onClick={() => handleButtonClick("Aceptados")}
-              text="Aceptados"
-            ></CreateButton>
-          </div>
+          {usuarioRol != "Administracion" && (
+            <div className="mr-4">
+              <CreateButton
+                colorClass="bg-verde w-fit h-20"
+                selected={selectedOption === "Pendientes"}
+                onClick={() => handleButtonClick("Pendientes")}
+                text="Pendientes"
+              ></CreateButton>
+            </div>
+          )}
+
+          {usuarioRol != "Administracion" && (
+            <div className="mr-4">
+              <CreateButton
+                colorClass="bg-verde-claro w-fit h-20"
+                selected={selectedOption === "Aceptados"}
+                onClick={() => handleButtonClick("Aceptados")}
+                text="Aceptados"
+              ></CreateButton>
+            </div>
+          )}
+
           <div className="mr-4">
             <CreateButton
               colorClass="bg-amarillo w-fit h-20"
@@ -222,6 +269,14 @@ export function Certificate() {
               selected={selectedOption === "Rechazados"}
               onClick={() => handleButtonClick("Rechazados")}
               text="Rechazados"
+            ></CreateButton>
+          </div>
+          <div className="mr-4">
+            <CreateButton
+              colorClass="bg-naranja w-fit h-20"
+              selected={selectedOption === "Anulados"}
+              onClick={() => handleButtonClick("Anulados")}
+              text="Anulados"
             ></CreateButton>
           </div>
         </div>

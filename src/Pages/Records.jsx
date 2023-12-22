@@ -8,7 +8,7 @@ import Group from "../assets/Group.png";
 import { FaSyncAlt, FaSpinner } from "react-icons/fa";
 
 export function Records() {
-  const [selectedOption, setSelectedOption] = useState("Pendientes");
+  const [selectedOption, setSelectedOption] = useState(localStorage.getItem("usuarioRol") === "Administracion" ? "Firmados" : "Pendientes");
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
   const [forceUpdate, setForceUpdate] = useState(false);
@@ -103,6 +103,26 @@ export function Records() {
           );
         }
       }
+
+      if (rolUsuario == "Administracion") {
+        if (estado == "Pendientes") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+            documento[rolUsuariologistica].toUpperCase() === "SI"
+          );
+        } else if (estado == "Firmados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuariologistica].toUpperCase() === "SI"
+          );
+        } else if (estado == "Rechazados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuariologistica].toUpperCase() === "NO"
+          );
+        }
+      }
+
       documentosFiltrados = documentosFiltrados.map((documento) => {
         documento["Fecha Expedición"] = documento["Fecha de Expedición"];
         documento["EMPRESA "] = documento["Empresa"];
@@ -153,22 +173,17 @@ export function Records() {
         className="relative mt-5 flex flex-col items-center ml-40"
       >
         <div className="flex justify-center">
-          <div className="mr-4">
-            <CreateButton
-              colorClass="bg-naranja h-20"
-              selected={selectedOption === "Pendientes"}
-              onClick={() => handleButtonClick("Pendientes")}
-              text="Pendientes"
-            ></CreateButton>
-          </div>
-          <div className="mr-4">
-            <CreateButton
-              colorClass="bg-verde-claro h-20"
-              selected={selectedOption === "Aceptados"}
-              onClick={() => handleButtonClick("Aceptados")}
-              text="Aceptados"
-            ></CreateButton>
-          </div>
+        {usuarioRol !=
+            "Administracion" && (
+              <div className="mr-4">
+                <CreateButton
+                  colorClass="bg-naranja h-20"
+                  selected={selectedOption === "Pendientes"}
+                  onClick={() => handleButtonClick("Pendientes")}
+                  text="Pendientes"
+                ></CreateButton>
+              </div>
+            )}
           <div className="mr-4">
             <CreateButton
               colorClass="bg-amarillo h-20"
