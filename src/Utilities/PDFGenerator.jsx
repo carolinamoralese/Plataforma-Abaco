@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as pdfMake from "pdfmake/build/pdfmake";
-import 'pdfmake/build/vfs_fonts';
+import "pdfmake/build/vfs_fonts";
 import PropTypes from "prop-types";
 import htmlToPdfmake from "html-to-pdfmake";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,7 @@ import pdfFonts from "./vfs_fonts";
 import { gapi } from "gapi-script";
 import { FaSpinner } from "react-icons/fa";
 
-pdfMake.vfs = pdfFonts
+pdfMake.vfs = pdfFonts;
 
 function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const params = useParams();
@@ -28,187 +28,128 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const rolUsuarioAnular = "R_Anulado";
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
 
+  const uploadPDFToDrive = async (pdfBlob, nit, tipoDocumento, consecutivo) => {
+    const CLIENT_ID = "436408748390-s4omgsu7kic68ekiffb2fnt5oock1ocn";
+    const API_KEY = "AIzaSyAsJmyUSN5peI0E8UN7er79DPKF1pllelc";
+    const DISCOVERY_DOCS = [
+      "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+    ];
+    const SCOPES = "https://www.googleapis.com/auth/drive";
+    const fileName = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
 
-  const uploadPDFToDrive = async (
-    pdfBlob,
-    nit,
-    tipoDocumento,
-    consecutivo
-  ) => {
-    const CLIENT_ID = '436408748390-s4omgsu7kic68ekiffb2fnt5oock1ocn';
-    const API_KEY = 'AIzaSyAsJmyUSN5peI0E8UN7er79DPKF1pllelc';
-    const DISCOVERY_DOCS = 'https://www.googleapis.com/discovery/v1/apis/dirve/v3/rest';
-    const SCOPES = 'https://www.googleapis.com/auth/drive'
+    const folders = {
+      documentos: "1XxEWsrLrnJA7IjcSylmkHt40ixh4_W0w",
+      certificados: "10Pps-4_44-rNxIu7gclgcFhAgoAQ-LEj",
+      constancias: "1OS78RuuVE0rdcwIANkF5WFBmnfXZKmZD",
+    };
+    //const folderId = ["1XxEWsrLrnJA7IjcSylmkHt40ixh4_W0w"];
 
-  //   function start() {
-  //     gapi.client.init({
-  //       clientId: CLIENT_ID,
-  //       scope: SCOPES,
-  //     });
-  //   }
+    gapi.load("client:auth2", () => {
+      gapi.client
+        .init({
+          apiKey: API_KEY,
+          client_id: CLIENT_ID,
+          discoveryDocs: DISCOVERY_DOCS,
+          scope: SCOPES,
+        })
+        .then(() => {
+          checkIfFileExistsInGoogleDrive(fileName, folders.documentos)
+            .then(function (existingFile) {
+              if (existingFile) {
+                console.log(
+                  "El archivo ya existe en Google Drive:",
+                  existingFile
+                );
+                return;
+              } else {
+                var fileMetadata = {
+                  name: fileName,
+                  parents: [folders.documentos],
+                };
 
-  
+                var boundary = "-------314159265358979323846";
+                var delimiter = "\r\n--" + boundary + "\r\n";
+                var close_delim = "\r\n--" + boundary + "--";
 
-  // gapi.load('client:auth2', start);
-    
-    // let client_drive = window.google.auth2({
-    //   apiKey: API_KEY,
-    //   clientId: CLIENT_ID,
-    //   discoveryDocs: DISCOVERY_DOCS,
-    //   scopes:SCOPES
-    // }).then(function(){
-    //   console.log("pepa")
-    // })
+                var metadata =
+                  delimiter +
+                  "Content-Type: application/json\r\n\r\n" +
+                  JSON.stringify(fileMetadata);
 
-    // window.gapi.client.load('auth2', function () {
-    //   var auth2 = window.gapi.auth2.init({
-    //     client_id: CLIENT_ID // Reemplaza con tu ID de cliente
-    //   });
-  
-    //   // Aquí puedes realizar más operaciones después de la inicialización
-    // });
+                var fileReader = new FileReader();
+                fileReader.onload = function (event) {
+                  var base64Data = event.target.result.split(",")[1];
 
-    // let access_token = window.gapi.auth.getToken().access_token;
-    // let request = window.gapi.client.request({
-    //   'path': 'drive/v2/files',
-    //   'method': 'POST',
-    //   'headers': {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': 'Bearer ' + access_token,
-    //   },
-    //   'body': {
-    //     'title': 'Backup Folder',
-    //     'mimeType': 'application/vnd.google-apps.folder'
-    //   }
-    // });
+                  var multipartRequestBody =
+                    metadata +
+                    delimiter +
+                    "Content-Type: application/pdf\r\n" +
+                    "Content-Transfer-Encoding: base64\r\n" +
+                    "\r\n" +
+                    base64Data +
+                    close_delim;
 
-    // request.execute(function(response){
-    //   console.log(response.id)
-    // })
+                  var request = window.gapi.client.request({
+                    path: "/upload/drive/v3/files",
+                    method: "POST",
+                    params: {
+                      uploadType: "multipart",
+                    },
+                    headers: {
+                      "Content-Type": "multipart/related; boundary=" + boundary,
+                    },
+                    body: multipartRequestBody,
+                  });
 
-    // gapi.load('client:auth2', () => {
-    //   gapi.client.init({
-    //     client_id: '436408748390-s4omgsu7kic68ekiffb2fnt5oock1ocn',
-    //     scope: SCOPES,
-    //   }).then((auth2) => {
-    //     // Aquí la autenticación se ha inicializado correctamente
-    //     // Puedes obtener el token de acceso cuando sea necesario
-    //     console.log("auth2: ", auth2)
-    //     const accessToken = auth2.currentUser.get().getAuthResponse().access_token;
-    //     console.log('Token de acceso:', accessToken);
+                  request.execute(function (response) {
+                    console.log("Archivo subido:", response);
+                  });
+                };
 
-    //     var metadata = {
-    //       'name': 'sampleName', // Filename at Google Drive
-    //       'mimeType': 'application/pdf', // mimeType at Google Drive
-    //       'parents': ['### folder ID ###'], // Folder ID at Google Drive
-    //     };
-    
-    //     //var accessToken = window.gapi.auth.getToken().access_token; // Here gapi is used for retrieving the access token.
-    //     var form = new FormData();
-    //     form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-    //     form.append('file', pdfBlob);
-    
-    //     var xhr = new XMLHttpRequest();
-    //     xhr.open('post', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id');
-    //     xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
-    //     xhr.responseType = 'json';
-    //     xhr.onload = () => {
-    //         console.log(xhr.response.id); // Retrieve uploaded file ID.
-    //     };
-    //     xhr.send(form);
-    //   }).catch((error) => {
-    //     console.error('Error al inicializar la API de autenticación de Google:', error);
-    //   });
-    // });
-
-
-    // gapi.load('client:auth2', () => {
-    //   gapi.client.init({
-    //     apiKey: API_KEY,
-    //     client_id: '436408748390-s4omgsu7kic68ekiffb2fnt5oock1ocn',
-    //     discoveryDocs: DISCOVERY_DOCS,
-    //     scope: SCOPES,
-    //   }).then(() => {
-    //     console.log("Autenticación inicializada correctamente")
-    //     gapi.auth2.getAuthInstance().signIn();
-    //     const auth2 = gapi.auth2.getAuthInstance();
-    //     console.log('auth2:', auth2);
-    //     if (auth2) {
-    //       const user = auth2.currentUser.get();
-    //       if (user) {
-    //         console.log('user:', user.getAuthResponse(true));
-    //         const accessToken = user.getAuthResponse(true);
-    //         console.log('Token de acceso:', gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse(true));
-    //       } else {
-    //         console.error('No se pudo obtener el usuario actual');
-    //       }
-    //     } else {
-    //       console.error('No se pudo obtener la instancia de autenticación');
-    //     }
-    //   }).catch((error) => {
-    //     console.error('Error al inicializar la autenticación:', error);
-    //   });
-    // });
-
-
-    gapi.load('client:auth2', () => {
-      gapi.client.init({
-        //apiKey: API_KEY,
-        client_id: '436408748390-s4omgsu7kic68ekiffb2fnt5oock1ocn',
-        //discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES,
-      }).then(() => {
-        console.log("Autenticación inicializada correctamente")
-        gapi.auth2.getAuthInstance().signIn().then(() => {
-          const auth2 = gapi.auth2.getAuthInstance();
-          console.log('auth2:', auth2);
-          console.log("access_token:", auth2.currentUser.get().getAuthResponse(true).access_token)
-
-          var metadata = {
-            'name': 'sampleName.pdf', // Filename at Google Drive
-            'mimeType': 'application/pdf', // mimeType at Google Drive
-            'parents': [''], // Folder ID at Google Drive
-          };
-      
-          var accessToken = auth2.currentUser.get().getAuthResponse(true).access_token; // Here gapi is used for retrieving the access token.
-          var metadataString = JSON.stringify(metadata);
-          var metadataBlob = new Blob([metadataString], { contentType: 'application/json' });
-          var form = new FormData();
-          form.append("metadata", metadataBlob);
-          form.append('name', 'sampleName.pdf');
-          form.append('mimeType', 'application/pdf');
-          form.append('data', pdfBlob, {
-            filename: "sampleName.pdf",
-            contentType: "application/pdf",
-          });
-      
-          fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media&q=(mimeType="application/pdf")', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'mimeType': 'application/pdf',
-            },
-            body: form,
-          }).then(response => response.json())
-            .then(data => {
-              console.log('Archivo subido:', data);
-            }).catch(error => {
-              console.error('Error al cargar el archivo:', error);
+                fileReader.readAsDataURL(pdfBlob);
+              }
+            })
+            .catch(function (error) {
+              console.error(
+                "Error al verificar la existencia del archivo:",
+                error
+              );
             });
-
-          
-        }).catch((error) => {
-          console.error('Error al iniciar sesión:', error);
+        })
+        .catch((error) => {
+          console.error("Error al inicializar la autenticación:", error);
         });
-      }).catch((error) => {
-        console.error('Error al inicializar la autenticación:', error);
-      });
     });
-
-    
   };
 
-
+  function checkIfFileExistsInGoogleDrive(fileName, folderId) {
+    return new Promise(function (resolve, reject) {
+      if (gapi.client.drive) {
+        gapi.client.drive.files
+          .list({
+            q: `'${folderId}' in parents and name = '${fileName}' and trashed = false`,
+            fields: "files(id, name)",
+          })
+          .then(function (response) {
+            const files = response.result.files;
+            if (files && files.length > 0) {
+              resolve(files[0]);
+            } else {
+              resolve(null);
+            }
+          })
+          .catch(function (error) {
+            reject(error);
+          });
+      } else {
+        setTimeout(() => {
+          checkIfFileExistsInGoogleDrive(fileName, folderId)
+            .then((response) => resolve(response))
+            .catch((error) => reject(error));
+        }, 1000); // Retry after 1 second if gapi.client.drive is not yet available
+      }
+    });
+  }
 
   const uploadPDFToFirebaseStorage = async (
     pdfBlob,
@@ -228,9 +169,8 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   };
 
   const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
-
-    if (infoDocumento == null){
-      return
+    if (infoDocumento == null) {
+      return;
     }
 
     if (data && Array.isArray(data) && data.length > 0) {
@@ -518,10 +458,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           style: "informacionRevisado",
         });
       }
-      
-
-
-     
 
       const documentDefinition = {
         content,
@@ -609,13 +545,22 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
         },
       };
 
-      if (tipoDocumento == "certificado" && infoDocumento[rolUsuarioAnular].toUpperCase() === "SI") {
-        documentDefinition["watermark"] = {text: 'ANULADO', color: 'red', opacity: 0.1, bold: true, italics: false}
+      if (
+        tipoDocumento == "certificado" &&
+        infoDocumento[rolUsuarioAnular].toUpperCase() === "SI"
+      ) {
+        documentDefinition["watermark"] = {
+          text: "ANULADO",
+          color: "red",
+          opacity: 0.1,
+          bold: true,
+          italics: false,
+        };
       }
 
       const pdfDoc = pdfMake.createPdf(documentDefinition);
 
-      setCargandoDocumento(true)
+      setCargandoDocumento(true);
 
       pdfDoc.getBlob((pdfBlob) => {
         onDataGenerated(pdfBlob);
@@ -630,8 +575,8 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           infoDocumento["NIT"],
           tipoDocumento,
           documento["hoja_No"]
-        )
-        setCargandoDocumento(false)
+        );
+        setCargandoDocumento(false);
       });
     }
   };
@@ -711,18 +656,18 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   return (
     <div>
       {cargandoDocumento ? (
-      <div
-      style={{
-        fontSize: "20px",
-        fontWeight: "bold",
-        marginTop: "60px",
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
-      <FaSpinner className="animate-spin" size={30} />
-      Generando el PDF
-    </div>
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: "bold",
+            marginTop: "60px",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <FaSpinner className="animate-spin" size={30} />
+          Generando el PDF
+        </div>
       ) : (
         <p></p>
       )}

@@ -143,7 +143,7 @@ export const obtenerDetalleFactura = () => {
     })
 }
 
-export const anularCertificado = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const anularCertificado = (nuevoEstado, consecutivo, correo, motivoAnulacion="") => {
     let opciones = {
         method: "POST",
         
@@ -153,7 +153,7 @@ export const anularCertificado = (nuevoEstado, consecutivo, correo, motivoRechaz
         dataToAdd: nuevoEstado,
         consecutivo,
         dataToAdd2: correo,
-        dataToAdd3: motivoRechazo,
+        dataToAdd3: motivoAnulacion,
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_ANULAR_CERTIFICADOS+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
