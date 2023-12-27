@@ -13,7 +13,11 @@ const logoStyle = {
   width: '100px', 
 };
 
-function Popup({ isOpen, onClose, message }) {
+function Popup({ isOpen, onClose, message, url="/home" }) {
+  const reloadPage = () => {
+    window.location.reload(); // Recargar la página
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -26,7 +30,7 @@ function Popup({ isOpen, onClose, message }) {
           {message}
         </p>
         <div className="text-center mt-4">
-        <NavLink to="/home">
+        <NavLink to={url} onClick={url == "/home" ? '' : reloadPage}>
             <button
               onClick={onClose}
               className="bg-verde-claro hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-3xl"

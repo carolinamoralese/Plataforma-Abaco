@@ -25,11 +25,13 @@ export function PdfView() {
   const rolUsuario = localStorage.getItem("usuarioRol");
   const [mostrarBotones, setMostrarBotones] = useState(false);
   const [infoDocumento, setInfoDocumento] = useState(null);
+  const [urlToRedirect , setUrlToRedirect ] = useState("/home");
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const rolUsuarioAnulador = "R_Anulado";
   const userEmail = localStorage.getItem("userEmail");
+ 
 
 
   const showPDF = (pdfBlob) => {
@@ -48,6 +50,7 @@ export function PdfView() {
           );
 
           setInfoDocumento(documento)
+          setUrlToRedirect(`/pdf-view/certificados/${params.certificados_consecutivo}`)
 
           if (
             rolUsuario == "Logistica" &&
@@ -84,6 +87,7 @@ export function PdfView() {
             (doc) => doc["Hoja_No"] == params.constancias_consecutivo
           );
           setInfoDocumento(documento)
+          setUrlToRedirect(`/pdf-view/constancias/${params.constancias_consecutivo}`)
           if (
             rolUsuario == "Logistica" &&
             documento[rolUsuariologistica] === ""
@@ -323,6 +327,7 @@ export function PdfView() {
             isOpen={isPopupOpen}
             onClose={() => setIsPopupOpen(false)}
             message="¡Se ha gestionado el documento!"
+            url={urlToRedirect}
           />
         )}
       </div>

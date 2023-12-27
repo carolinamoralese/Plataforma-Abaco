@@ -27,100 +27,183 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const rolUsuarioAnular = "R_Anulado";
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
+  const rolUsuario = localStorage.getItem("usuarioRol");
 
-  const uploadPDFToDrive = async (pdfBlob, nit, tipoDocumento, consecutivo) => {
-    const CLIENT_ID = "436408748390-s4omgsu7kic68ekiffb2fnt5oock1ocn";
-    const API_KEY = "AIzaSyAsJmyUSN5peI0E8UN7er79DPKF1pllelc";
-    const DISCOVERY_DOCS = [
-      "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
-    ];
-    const SCOPES = "https://www.googleapis.com/auth/drive";
-    const fileName = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
+  const DISCOVERY_DOCS = [
+    "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+  ];
+  const SCOPES = "https://www.googleapis.com/auth/drive";
 
-    const folders = {
-      documentos: "1XxEWsrLrnJA7IjcSylmkHt40ixh4_W0w",
-      certificados: "10Pps-4_44-rNxIu7gclgcFhAgoAQ-LEj",
-      constancias: "1OS78RuuVE0rdcwIANkF5WFBmnfXZKmZD",
-    };
-    //const folderId = ["1XxEWsrLrnJA7IjcSylmkHt40ixh4_W0w"];
+  const uploadPDFToDrive = async (
+    pdfBlob,
+    nit,
+    tipoDocumento,
+    consecutivo,
+    estadoDocumento
+  ) => {
+    const fileName = `${tipoDocumento}_No_${consecutivo}.pdf`;
 
-    gapi.load("client:auth2", () => {
-      gapi.client
-        .init({
-          apiKey: API_KEY,
-          client_id: CLIENT_ID,
-          discoveryDocs: DISCOVERY_DOCS,
-          scope: SCOPES,
-        })
-        .then(() => {
-          checkIfFileExistsInGoogleDrive(fileName, folders.documentos)
-            .then(function (existingFile) {
-              if (existingFile) {
-                console.log(
-                  "El archivo ya existe en Google Drive:",
-                  existingFile
-                );
-                return;
-              } else {
-                var fileMetadata = {
-                  name: fileName,
-                  parents: [folders.documentos],
-                };
+    tipoDocumento =
+      tipoDocumento.charAt(0).toUpperCase() + tipoDocumento.slice(1) + "s";
 
-                var boundary = "-------314159265358979323846";
-                var delimiter = "\r\n--" + boundary + "\r\n";
-                var close_delim = "\r\n--" + boundary + "--";
+    const folderPath = ["Documentos", tipoDocumento, nit, estadoDocumento];
 
-                var metadata =
-                  delimiter +
-                  "Content-Type: application/json\r\n\r\n" +
-                  JSON.stringify(fileMetadata);
+    await loadDriveClient();
 
-                var fileReader = new FileReader();
-                fileReader.onload = function (event) {
-                  var base64Data = event.target.result.split(",")[1];
+    await sleep(8000);
 
-                  var multipartRequestBody =
-                    metadata +
-                    delimiter +
-                    "Content-Type: application/pdf\r\n" +
-                    "Content-Transfer-Encoding: base64\r\n" +
-                    "\r\n" +
-                    base64Data +
-                    close_delim;
+    const folders = folderPath;
+    let parentFolderId = null;
 
-                  var request = window.gapi.client.request({
-                    path: "/upload/drive/v3/files",
-                    method: "POST",
-                    params: {
-                      uploadType: "multipart",
-                    },
-                    headers: {
-                      "Content-Type": "multipart/related; boundary=" + boundary,
-                    },
-                    body: multipartRequestBody,
-                  });
+    for (let i = 0; i < folders.length; i++) {
+      const folder = folders[i];
+      const existingFolder = await checkIfFolderExists(folder, parentFolderId);
 
-                  request.execute(function (response) {
-                    console.log("Archivo subido:", response);
-                  });
-                };
+      console.log("existingFolder: ", existingFolder);
 
-                fileReader.readAsDataURL(pdfBlob);
-              }
-            })
-            .catch(function (error) {
-              console.error(
-                "Error al verificar la existencia del archivo:",
-                error
-              );
+      if (existingFolder) {
+        // La carpeta ya existe, actualiza el parentFolderId para la próxima iteración
+        parentFolderId = existingFolder.id;
+      } else {
+        // La carpeta no existe, créala y actualiza el parentFolderId para la próxima iteración
+        const newFolderId = await createFolder(folder, parentFolderId);
+        console.log("newFolderId: ", newFolderId);
+        parentFolderId = newFolderId;
+      }
+    }
+    checkIfFileExistsInGoogleDrive(fileName, parentFolderId)
+      .then(function (existingFile) {
+        if (existingFile) {
+          console.log("El archivo ya existe en Google Drive:", existingFile);
+          return;
+        } else {
+          var fileMetadata = {
+            name: fileName,
+            parents: [parentFolderId],
+          };
+
+          var boundary = "-------314159265358979323846";
+          var delimiter = "\r\n--" + boundary + "\r\n";
+          var close_delim = "\r\n--" + boundary + "--";
+
+          var metadata =
+            delimiter +
+            "Content-Type: application/json\r\n\r\n" +
+            JSON.stringify(fileMetadata);
+
+          var fileReader = new FileReader();
+          fileReader.onload = function (event) {
+            var base64Data = event.target.result.split(",")[1];
+
+            var multipartRequestBody =
+              metadata +
+              delimiter +
+              "Content-Type: application/pdf\r\n" +
+              "Content-Transfer-Encoding: base64\r\n" +
+              "\r\n" +
+              base64Data +
+              close_delim;
+
+            var request = window.gapi.client.request({
+              path: "/upload/drive/v3/files",
+              method: "POST",
+              params: {
+                uploadType: "multipart",
+              },
+              headers: {
+                "Content-Type": "multipart/related; boundary=" + boundary,
+              },
+              body: multipartRequestBody,
             });
+
+            request.execute(function (response) {
+              console.log("Archivo subido:", response);
+            });
+          };
+
+          fileReader.readAsDataURL(pdfBlob);
+        }
+      })
+      .catch(function (error) {
+        console.error("Error al verificar la existencia del archivo:", error);
+      });
+  };
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function loadDriveClient() {
+    try {
+      await new Promise((resolve, reject) => {
+        window.gapi.load("client:auth2", async () => {
+          window.gapi.client.init({
+            apiKey: VARIABLES_ENTORNO.REACT_APP_GOOGLE_API_KEY,
+            client_id: VARIABLES_ENTORNO.REACT_APP_GOOGLE_CLIENT_ID,
+            discoveryDocs: DISCOVERY_DOCS,
+            scope: SCOPES,
+          });
+
+          resolve(window.gapi.client.load("drive", "v3"));
+        });
+      });
+      console.log("API de Google Drive cargada correctamente");
+    } catch (error) {
+      console.error("Error al cargar la API de Google Drive:", error);
+      throw error;
+    }
+  }
+
+  async function checkIfFolderExists(folderName, parentFolderId) {
+    let query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+
+    if (parentFolderId != null) {
+      query = `'${parentFolderId}' in parents and name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    }
+
+    const response = await window.gapi.client.drive.files.list({
+      q: query,
+      fields: "files(id, name)",
+    });
+
+    if (response && response.result && response.result.files) {
+      const folders = response.result.files;
+      if (folders.length > 0) {
+        return folders[0]; // Devuelve la primera carpeta encontrada
+      } else {
+        return null; // La carpeta no existe en el folder específico
+      }
+    } else {
+      throw new Error(
+        "La respuesta no tiene la estructura esperada o está vacía"
+      );
+    }
+  }
+
+  // Función para crear una carpeta en Google Drive
+  async function createFolder(folderName, parentFolderId) {
+    return new Promise(function (resolve, reject) {
+      var fileMetadata = {
+        name: folderName,
+        mimeType: "application/vnd.google-apps.folder",
+      };
+      if (parentFolderId) {
+        fileMetadata["parents"] = [parentFolderId];
+      }
+
+      window.gapi.client.drive.files
+        .create({
+          resource: fileMetadata,
+          fields: "id",
         })
-        .catch((error) => {
-          console.error("Error al inicializar la autenticación:", error);
+        .then(function (response) {
+          resolve(response.result.id);
+        })
+        .catch(function (error) {
+          reject(error);
         });
     });
-  };
+  }
 
   function checkIfFileExistsInGoogleDrive(fileName, folderId) {
     return new Promise(function (resolve, reject) {
@@ -151,22 +234,22 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
     });
   }
 
-  const uploadPDFToFirebaseStorage = async (
-    pdfBlob,
-    nit,
-    tipoDocumento,
-    consecutivo
-  ) => {
-    try {
-      const storage = getStorage();
+  // const uploadPDFToFirebaseStorage = async (
+  //   pdfBlob,
+  //   nit,
+  //   tipoDocumento,
+  //   consecutivo
+  // ) => {
+  //   try {
+  //     const storage = getStorage();
 
-      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
-      const storageRef = ref(storage, rutaArchivo);
-      await uploadBytes(storageRef, pdfBlob);
-    } catch (error) {
-      console.error("Error al subir el PDF a Firebase Storage:", error);
-    }
-  };
+  //     const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
+  //     const storageRef = ref(storage, rutaArchivo);
+  //     await uploadBytes(storageRef, pdfBlob);
+  //   } catch (error) {
+  //     console.error("Error al subir el PDF a Firebase Storage:", error);
+  //   }
+  // };
 
   const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
     if (infoDocumento == null) {
@@ -564,19 +647,53 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
       pdfDoc.getBlob((pdfBlob) => {
         onDataGenerated(pdfBlob);
-        uploadPDFToFirebaseStorage(
-          pdfBlob,
-          infoDocumento["NIT"],
-          tipoDocumento,
-          documento["hoja_No"]
-        );
-        uploadPDFToDrive(
-          pdfBlob,
-          infoDocumento["NIT"],
-          tipoDocumento,
-          documento["hoja_No"]
-        );
+        // uploadPDFToFirebaseStorage(
+        //   pdfBlob,
+        //   infoDocumento["NIT"],
+        //   tipoDocumento,
+        //   documento["hoja_No"]
+        // );
         setCargandoDocumento(false);
+
+        if (
+          tipoDocumento == "certificado" &&
+          infoDocumento[rolUsuarioAnular].toUpperCase() === "SI" &&
+          rolUsuario == "Administracion"
+        ) {
+          uploadPDFToDrive(
+            pdfBlob,
+            infoDocumento["NIT"],
+            tipoDocumento,
+            documento["hoja_No"],
+            "Anulados"
+          );
+        } else if (
+          tipoDocumento == "certificado" &&
+          infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
+          infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+          infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" &&
+          rolUsuario == "Fiscal"
+        ) {
+          uploadPDFToDrive(
+            pdfBlob,
+            infoDocumento["NIT"],
+            tipoDocumento,
+            documento["hoja_No"],
+            "Firmados"
+          );
+        } else if (
+          tipoDocumento == "constancia" &&
+          infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
+          rolUsuario == "Logistica"
+        ) {
+          uploadPDFToDrive(
+            pdfBlob,
+            infoDocumento["NIT"],
+            tipoDocumento,
+            documento["hoja_No"],
+            "Firmados"
+          );
+        }
       });
     }
   };
@@ -666,7 +783,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           }}
         >
           <FaSpinner className="animate-spin" size={30} />
-          Generando el PDF
+          Cargando el documento PDF
         </div>
       ) : (
         <p></p>
