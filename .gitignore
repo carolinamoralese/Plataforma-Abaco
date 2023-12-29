@@ -26,3 +26,5 @@ dist-ssr
 # env
 .env
 env.js
+
+google_credentials.js

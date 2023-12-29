@@ -8,7 +8,7 @@ export function DonationInformation({ documentos, tipoDocumento }) {
     let ruta = "/pdf-view/" + tipoDocumento + "/" + documento.Consecutivo
     documento.accion = <a href={ruta}>Ver</a>;
 
-    if(documento.Nota_Anulado != undefined && documento.Nota_Fiscal !== ""){
+    if(documento.Nota_Anulado != undefined && documento.Nota_Anulado !== ""){
       documento.Observaciones = documento.Nota_Anulado
     }else if(documento.Nota_Logistica != undefined && documento.Nota_Logistica !== ""){
       documento.Observaciones = documento.Nota_Logistica

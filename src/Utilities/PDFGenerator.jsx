@@ -10,11 +10,10 @@ import {
   firmaRevisorFiscal,
 } from "./utilities";
 import { obtenerDetalleFactura } from "../servicios/servicios";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
 import pdfFonts from "./vfs_fonts";
-import { gapi } from "gapi-script";
+import { gapi } from "gapi-script"; //se debe mantener para la autenticación con la API de Google
 import { FaSpinner } from "react-icons/fa";
 
 pdfMake.vfs = pdfFonts;
@@ -28,6 +27,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const rolUsuarioAnular = "R_Anulado";
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
   const rolUsuario = localStorage.getItem("usuarioRol");
+  let googleClient = null;
 
   const DISCOVERY_DOCS = [
     "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
@@ -49,8 +49,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
     const folderPath = ["Documentos", tipoDocumento, nit, estadoDocumento];
 
     await loadDriveClient();
-
-    await sleep(8000);
 
     const folders = folderPath;
     let parentFolderId = null;
@@ -104,7 +102,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
               base64Data +
               close_delim;
 
-            var request = window.gapi.client.request({
+            var request = googleClient.request({
               path: "/upload/drive/v3/files",
               method: "POST",
               params: {
@@ -129,22 +127,27 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       });
   };
 
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
   async function loadDriveClient() {
     try {
       await new Promise((resolve, reject) => {
         window.gapi.load("client:auth2", async () => {
-          window.gapi.client.init({
-            apiKey: VARIABLES_ENTORNO.REACT_APP_GOOGLE_API_KEY,
-            client_id: VARIABLES_ENTORNO.REACT_APP_GOOGLE_CLIENT_ID,
-            discoveryDocs: DISCOVERY_DOCS,
+          await window.gapi.client.init({
+            clientId: VARIABLES_ENTORNO.REACT_APP_GOOGLE_CLIENT_ID,
             scope: SCOPES,
+            key: VARIABLES_ENTORNO.REACT_APP_GOOGLE_API_KEY,
           });
 
-          resolve(window.gapi.client.load("drive", "v3"));
+          const authInstance = window.gapi.auth2.getAuthInstance();
+
+          if (!authInstance.isSignedIn.get()) {
+            await authInstance.signIn();
+          }
+
+          await window.gapi.client.load("drive", "v3");
+
+          googleClient = window.gapi.client;
+
+          resolve(window.gapi.client);
         });
       });
       console.log("API de Google Drive cargada correctamente");
@@ -161,17 +164,18 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       query = `'${parentFolderId}' in parents and name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
     }
 
-    const response = await window.gapi.client.drive.files.list({
+    const response = await googleClient.drive.files.list({
       q: query,
       fields: "files(id, name)",
+      key: VARIABLES_ENTORNO.REACT_APP_GOOGLE_API_KEY,
     });
 
     if (response && response.result && response.result.files) {
       const folders = response.result.files;
       if (folders.length > 0) {
-        return folders[0]; // Devuelve la primera carpeta encontrada
+        return folders[0];
       } else {
-        return null; // La carpeta no existe en el folder específico
+        return null;
       }
     } else {
       throw new Error(
@@ -191,7 +195,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
         fileMetadata["parents"] = [parentFolderId];
       }
 
-      window.gapi.client.drive.files
+      googleClient.drive.files
         .create({
           resource: fileMetadata,
           fields: "id",
@@ -207,8 +211,8 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
   function checkIfFileExistsInGoogleDrive(fileName, folderId) {
     return new Promise(function (resolve, reject) {
-      if (gapi.client.drive) {
-        gapi.client.drive.files
+      if (googleClient.drive) {
+        googleClient.drive.files
           .list({
             q: `'${folderId}' in parents and name = '${fileName}' and trashed = false`,
             fields: "files(id, name)",
@@ -229,7 +233,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           checkIfFileExistsInGoogleDrive(fileName, folderId)
             .then((response) => resolve(response))
             .catch((error) => reject(error));
-        }, 1000); // Retry after 1 second if gapi.client.drive is not yet available
+        }, 1000);
       }
     });
   }
@@ -383,8 +387,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           let costoTotal = 0;
 
           arraysFacturasAgrupadas.forEach((itemsFactura) => {
-            itemsFactura.forEach((item, indice, array) => {
-              //const posicionMitad = Math.floor(array.length / 2);
+            itemsFactura.forEach((item, indice) => {
               if (indice === 0) {
                 costoTotal += item["Costo Total"];
 
@@ -401,10 +404,10 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
                 ]);
               } else {
                 dynamicTable.table.body.push([
-                  "",
+                  item["Nro Factura"],
                   item["Fecha Factura"],
                   item["Desc Articulo"],
-                  "",
+                  "----------------------------",
                 ]);
               }
             });
