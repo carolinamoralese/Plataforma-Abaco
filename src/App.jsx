@@ -33,6 +33,7 @@ function AppRoutes() {
               usuarioLogueado.DescripcionRol
             );
             localStorage.setItem("userEmail", user.email);
+            localStorage.setItem("userUid", user.uid);
             setUser(usuarioLogueado);
           } else {
             setUser(null);
