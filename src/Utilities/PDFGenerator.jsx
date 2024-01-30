@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, getFirestore } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, uploadString, getDownloadURL } from "firebase/storage";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  uploadString,
+  getDownloadURL,
+} from "firebase/storage";
 import * as pdfMake from "pdfmake/build/pdfmake";
 import "pdfmake/build/vfs_fonts";
 import PropTypes from "prop-types";
@@ -38,79 +44,67 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const db = getFirestore();
 
   useEffect(() => {
-
-    console.log("userUid", userUid)
+    console.log("userUid", userUid);
 
     if (userUid) {
-
       const storage = getStorage();
       const storageRef = ref(storage, `firmas/${userUid}.jpg`);
-      
-        console.log("userUid2", userUid)
-        console.log("storageRef", storageRef)
 
-        let fileUrl;
-        
-        getDownloadURL(storageRef)
-        .then(url => {
-          fileUrl = url;
-          console.log("url", url)
-          fetchAsBlob(url).then((blob) => {
-            console.log("blob", blob)
-            convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
-              console.log("doubleBase64EncodedFile", doubleBase64EncodedFile)
+      console.log("userUid2", userUid);
+      console.log("storageRef", storageRef);
 
-              // El usuario tiene una firma almacenada, puedes cargarla desde Firestore
-              setRevisorFiscalSignature(doubleBase64EncodedFile);
-              setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
-            })
-            
-          })
-        })
+      let fileUrl;
 
-        console.log("fileUrl", fileUrl)
+      getDownloadURL(storageRef).then((url) => {
+        fileUrl = url;
+        console.log("url", url);
+        fetchAsBlob(url).then((blob) => {
+          console.log("blob", blob);
+          convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
+            console.log("doubleBase64EncodedFile", doubleBase64EncodedFile);
 
-        const fetchAsBlob = url => fetch(url)
-        .then(response => response.blob());
+            // El usuario tiene una firma almacenada, puedes cargarla desde Firestore
+            setRevisorFiscalSignature(doubleBase64EncodedFile);
+            setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
+          });
+        });
+      });
 
-        const convertBlobToBase64 = blob => new Promise((resolve, reject) => {
-          const reader = new FileReader;
+      console.log("fileUrl", fileUrl);
+
+      const fetchAsBlob = (url) =>
+        fetch(url).then((response) => response.blob());
+
+      const convertBlobToBase64 = (blob) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
           reader.onerror = reject;
           reader.onload = () => {
             resolve(reader.result);
           };
           reader.readAsDataURL(blob);
         });
-
-
-
-
-            
-       
-     
     }
-
-
   }, []);
 
   const handleSignatureUpload = async (signatureImage) => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
-      console.log("user", user)
+      console.log("user", user);
       const storage = getStorage();
       const storageRef = ref(storage, `firmas/${user.uid}.jpg`);
 
-      const uploadTask = await uploadString(storageRef, signatureImage, 'data_url');
+      await uploadString(
+        storageRef,
+        signatureImage,
+        "data_url"
+      );
 
-      console.log("signatureImage", signatureImage)
-
-      console.log("uploadTask", uploadTask)
-
-      const firestoreDocRef = doc(db, "firmas", user.uid);
-      await setDoc(firestoreDocRef, { firmaURL: signatureImage });
+      console.log("signatureImage", signatureImage);
 
       setRevisorFiscalSignature(signatureImage);
+      location.reload();
     } catch (error) {
       console.error("Error al cargar la firma:", error);
     }
@@ -325,22 +319,25 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
     });
   }
 
-  // const uploadPDFToFirebaseStorage = async (
-  //   pdfBlob,
-  //   nit,
-  //   tipoDocumento,
-  //   consecutivo
-  // ) => {
-  //   try {
-  //     const storage = getStorage();
 
-  //     const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
-  //     const storageRef = ref(storage, rutaArchivo);
-  //     await uploadBytes(storageRef, pdfBlob);
-  //   } catch (error) {
-  //     console.error("Error al subir el PDF a Firebase Storage:", error);
-  //   }
-  // };
+// FUNCION PARA GUARDAR EN FIRESTORAGE
+
+  const uploadPDFToFirebaseStorage = async (
+    pdfBlob,
+    nit,
+    tipoDocumento,
+    consecutivo
+  ) => {
+    try {
+      const storage = getStorage();
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
+      const storageRef = ref(storage, rutaArchivo);
+      await uploadBytes(storageRef, pdfBlob);
+    } catch (error) {
+      console.error("Error al subir el PDF a Firebase Storage:", error);
+    }
+  };
 
   const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
     if (infoDocumento == null) {
@@ -534,6 +531,22 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
         ) {
+          let designFirmaRevisorFiscal;
+
+          if (revisorFiscalSignature) {
+            designFirmaRevisorFiscal = {
+                image: revisorFiscalSignature,
+                fit: [70, 50],
+              }
+         
+          } else {
+            // Muestra algún mensaje o contenido alternativo si la firma no está presente
+            designFirmaRevisorFiscal = {
+              text: "Firma del Revisor Fiscal no disponible",
+              style: "informacionRevisado",
+            };
+          }
+
           content.push({
             table: {
               widths: ["60%", "40%"],
@@ -543,27 +556,13 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
                     image: firmaRepresentanteLegal,
                     fit: [70, 50],
                   },
-                  // {
-                  //   image: firmaRevisorFiscal,
-                  //   fit: [70, 50],
-                  // },
+                  designFirmaRevisorFiscal,
                 ],
               ],
             },
             layout: "noBorders",
           });
-          if (revisorFiscalSignature) {
-            // Agrega la firma en el espacio de firma del Revisor Fiscal
-            content.push({
-              image: revisorFiscalSignature,
-              width: 100, // ajusta el tamaño según tus necesidades
-              height: 50,
-              alignment: "right", // ajusta la alineación según tus necesidades
-            });
-          } else {
-            // Muestra algún mensaje o contenido alternativo si la firma no está presente
-            content.push({ text: "Firma del Revisor Fiscal no disponible", style: "informacionRevisado" });
-          }
+          
         }
       } else if (tipoDocumento == "constancia") {
         if (infoDocumento[rolUsuariologistica].toUpperCase() === "SI") {
@@ -749,12 +748,12 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
       pdfDoc.getBlob((pdfBlob) => {
         onDataGenerated(pdfBlob);
-        // uploadPDFToFirebaseStorage(
-        //   pdfBlob,
-        //   infoDocumento["NIT"],
-        //   tipoDocumento,
-        //   documento["hoja_No"]
-        // );
+        uploadPDFToFirebaseStorage(
+          pdfBlob,
+          infoDocumento["NIT"],
+          tipoDocumento,
+          documento["hoja_No"]
+        );
         setCargandoDocumento(false);
 
         if (
@@ -875,8 +874,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   return (
     <div>
       {revisorFiscalSignature ? (
-        // Muestra la firma si está disponible
-        <img src={revisorFiscalSignature} alt="Firma del Revisor Fiscal" />
+        ""
       ) : (
         // Muestra el formulario para cargar la firma si no está disponible
         <SignatureUploadForm
