@@ -95,11 +95,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       const storage = getStorage();
       const storageRef = ref(storage, `firmas/${user.uid}.jpg`);
 
-      await uploadString(
-        storageRef,
-        signatureImage,
-        "data_url"
-      );
+      await uploadString(storageRef, signatureImage, "data_url");
 
       console.log("signatureImage", signatureImage);
 
@@ -319,8 +315,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
     });
   }
 
-
-// FUNCION PARA GUARDAR EN FIRESTORAGE
+  // FUNCION PARA GUARDAR EN FIRESTORAGE
 
   const uploadPDFToFirebaseStorage = async (
     pdfBlob,
@@ -535,10 +530,9 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
           if (revisorFiscalSignature) {
             designFirmaRevisorFiscal = {
-                image: revisorFiscalSignature,
-                fit: [70, 50],
-              }
-         
+              image: revisorFiscalSignature,
+              fit: [70, 50],
+            };
           } else {
             // Muestra algún mensaje o contenido alternativo si la firma no está presente
             designFirmaRevisorFiscal = {
@@ -562,7 +556,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
             },
             layout: "noBorders",
           });
-          
         }
       } else if (tipoDocumento == "constancia") {
         if (infoDocumento[rolUsuariologistica].toUpperCase() === "SI") {
@@ -827,20 +820,9 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           const itemsFactura = await obtenerDetalleFactura();
           let items;
 
-          /* Quitar esta validación cuando se ajustes las apis
-             y la información este acorde en todas
-             cuando se visualice el documento 97, se va a mostrar
-             el detalle de la factura del documento 263
-             Para hacer pruebas mostrando la tabla costo total
-          */
-          if (params.certificados_consecutivo == 97) {
-            // 263 detalle de factura de otro documento, solo para hacer pruebas
-            items = itemsFactura.filter((item) => item["Hoja No. "] == 263);
-          } else {
-            items = itemsFactura.filter(
-              (item) => item["Hoja No. "] == params.certificados_consecutivo
-            );
-          }
+          items = itemsFactura.filter(
+            (item) => item["Hoja No. "] == params.certificados_consecutivo
+          );
 
           generatePDF(jsonData, infoDocumento, "certificado", items);
         } else if (typeof params.constancias_consecutivo !== "undefined") {
@@ -873,14 +855,14 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
   return (
     <div>
-      {revisorFiscalSignature ? (
-        ""
-      ) : (
+      {rolUsuario === "Fiscal" && !revisorFiscalSignature ? (
         // Muestra el formulario para cargar la firma si no está disponible
         <SignatureUploadForm
           onSignatureUpload={handleSignatureUpload}
           disabled={firmaCargada} // Deshabilita el botón si la firma ya está cargada
         />
+      ) : (
+        ""
       )}
       {cargandoDocumento ? (
         <div
