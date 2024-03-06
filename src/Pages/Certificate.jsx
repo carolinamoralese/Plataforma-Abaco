@@ -8,11 +8,7 @@ import { FaSyncAlt, FaSpinner } from "react-icons/fa";
 
 export function Certificate() {
   const usuarioRol = localStorage.getItem("usuarioRol");
-  const [selectedOption, setSelectedOption] = useState(
-    localStorage.getItem("usuarioRol") === "Administracion"
-      ? "Firmados"
-      : "Pendientes"
-  );
+  const [selectedOption, setSelectedOption] = useState("Pendientes");
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
   const [forceUpdate, setForceUpdate] = useState(false);
@@ -23,6 +19,9 @@ export function Certificate() {
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const rolUsuarioAnular = "R_Anulado";
+  const rolAdministrador = "R_Administrativa";
+  const nombreBotonPendientes =
+    usuarioRol == "Administracion" ? "Borradores" : "Pendientes";
 
   const handleRefreshClick = () => {
     setIsUpdating(true);
@@ -46,16 +45,6 @@ export function Certificate() {
       });
   }, [forceUpdate, isUpdating, usuarioRol]);
 
-  // useEffect(() => {
-  //   obtenerCertificados()
-  //     .then((documentos) => {
-  //       setDocumentos(documentos);
-  //     })
-  //     .catch((error) => {
-  //       console.error(error);
-  //     });
-  // }, []);
-
   function filtrarDocumentos(documentos, rolUsuario, estado) {
     return new Promise((resolve) => {
       let documentosFiltrados = documentos;
@@ -77,15 +66,20 @@ export function Certificate() {
       if (rolUsuario == "Logistica") {
         if (estado == "Pendientes") {
           documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica] === ""
+            (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica] === ""
           );
         } else if (estado == "Aceptados") {
           documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
+            (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
           );
         } else if (estado == "Firmados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
               documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
@@ -104,18 +98,21 @@ export function Certificate() {
         if (estado == "Pendientes") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad] === ""
           );
         } else if (estado == "Aceptados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI"
           );
         } else if (estado == "Firmados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
               documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
@@ -134,6 +131,7 @@ export function Certificate() {
         if (estado == "Pendientes") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
               documento[rolUsuarioRevisorFiscal] === ""
@@ -141,6 +139,7 @@ export function Certificate() {
         } else if (estado == "Aceptados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
               documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
@@ -148,6 +147,7 @@ export function Certificate() {
         } else if (estado == "Firmados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
               documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
@@ -166,13 +166,15 @@ export function Certificate() {
         if (estado == "Pendientes") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
-              documento[rolUsuariologistica].toUpperCase() === "SI" &&
-              documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-              documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
+              documento[rolAdministrador] === "" &&
+              documento[rolUsuariologistica] === "" &&
+              documento[rolUsuarioCotabilidad] === "" &&
+              documento[rolUsuarioRevisorFiscal] === ""
           );
         } else if (estado == "Firmados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI" &&
               documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
               documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
@@ -233,16 +235,14 @@ export function Certificate() {
         className="relative mt-5 flex flex-col items-center ml-40"
       >
         <div className="flex justify-center">
-          {usuarioRol != "Administracion" && (
-            <div className="mr-4">
-              <CreateButton
-                colorClass="bg-verde w-fit h-20"
-                selected={selectedOption === "Pendientes"}
-                onClick={() => handleButtonClick("Pendientes")}
-                text="Pendientes"
-              ></CreateButton>
-            </div>
-          )}
+          <div className="mr-4">
+            <CreateButton
+              colorClass="bg-verde w-fit h-20"
+              selected={selectedOption === "Pendientes"}
+              onClick={() => handleButtonClick("Pendientes")}
+              text={nombreBotonPendientes}
+            ></CreateButton>
+          </div>
 
           {usuarioRol != "Administracion" && (
             <div className="mr-4">

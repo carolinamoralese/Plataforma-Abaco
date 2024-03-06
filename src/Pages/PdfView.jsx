@@ -8,6 +8,7 @@ import { modificarEstadoCertificadoLogistica } from "../servicios/servicios";
 import { modificarEstadoCertificadoContabilidad } from "../servicios/servicios";
 import { modificarEstadoCertificadoRevisorFiscal } from "../servicios/servicios";
 import { modificarEstadoConstanciaLogistica } from "../servicios/servicios";
+import { modificarEstadoCertificadoAdministrador } from "../servicios/servicios";
 import { anularCertificado } from "../servicios/servicios";
 import {
   obtenerCertificados,
@@ -25,14 +26,14 @@ export function PdfView() {
   const rolUsuario = localStorage.getItem("usuarioRol");
   const [mostrarBotones, setMostrarBotones] = useState(false);
   const [infoDocumento, setInfoDocumento] = useState(null);
-  const [urlToRedirect , setUrlToRedirect ] = useState("/home");
+  const [mostrarBotonAnular, setMostrarBotonAnular] = useState(false)
+  const [urlToRedirect, setUrlToRedirect] = useState("/home");
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const rolUsuarioAnulador = "R_Anulado";
+  const rolUsuarioAdministrador = "R_Administrativa"
   const userEmail = localStorage.getItem("userEmail");
- 
-
 
   const showPDF = (pdfBlob) => {
     setPdfData(URL.createObjectURL(pdfBlob));
@@ -49,45 +50,60 @@ export function PdfView() {
             (doc) => doc["Hoja_No"] == params.certificados_consecutivo
           );
 
-          setInfoDocumento(documento)
-          setUrlToRedirect(`/pdf-view/certificados/${params.certificados_consecutivo}`)
-
+          setInfoDocumento(documento);
+          setUrlToRedirect(
+            `/pdf-view/certificados/${params.certificados_consecutivo}`
+          );
           if (
+            rolUsuario == "Administracion" &&
+            documento[rolUsuarioAdministrador].toUpperCase() ===""
+          ) {
+            setMostrarBotones(true);
+          } else if (
             rolUsuario == "Logistica" &&
+            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
             documento[rolUsuariologistica] === ""
           ) {
             setMostrarBotones(true);
           } else if (
             rolUsuario == "Contabilidad" &&
+            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
             documento[rolUsuariologistica].toUpperCase() === "SI" &&
             documento[rolUsuarioCotabilidad] === ""
           ) {
             setMostrarBotones(true);
           } else if (
             rolUsuario == "Fiscal" &&
+            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
             documento[rolUsuariologistica].toUpperCase() === "SI" &&
             documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
             documento[rolUsuarioRevisorFiscal] === ""
           ) {
             setMostrarBotones(true);
-          } else if(rolUsuario == "Administracion" && documento[rolUsuarioAnulador].toUpperCase() === "SI"){
-            setMostrarBotones(false);
-
-          }else if (
+          } else if (
             rolUsuario == "Administracion" &&
+            documento[rolUsuarioAnulador].toUpperCase() === "SI"
+          ) {
+            setMostrarBotones(false);
+          } else if (
+            rolUsuario == "Administracion" &&
+            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
             documento[rolUsuariologistica].toUpperCase() === "SI" &&
             documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
             documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
           ) {
-            setMostrarBotones(true);
+            setMostrarBotonAnular(true)
+            //setMostrarBotones(true);
           }
         } else if (typeof params.constancias_consecutivo !== "undefined") {
           const documentos = await obtenerConstancias();
           const documento = documentos.find(
             (doc) => doc["Hoja_No"] == params.constancias_consecutivo
           );
-          setInfoDocumento(documento)
-          setUrlToRedirect(`/pdf-view/constancias/${params.constancias_consecutivo}`)
+          setInfoDocumento(documento);
+          setUrlToRedirect(
+            `/pdf-view/constancias/${params.constancias_consecutivo}`
+          );
           if (
             rolUsuario == "Logistica" &&
             documento[rolUsuariologistica] === ""
@@ -105,8 +121,7 @@ export function PdfView() {
     } else {
       navigate("/");
     }
-  }, []); 
-
+  }, []);
 
   function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (nuevoEstado === rechazar) {
@@ -241,6 +256,12 @@ export function PdfView() {
             params.certificados_consecutivo,
             userEmail
           );
+        } else if(rolDelUsuario == "Administracion") {
+          modificarEstadoCertificadoAdministrador(
+            nuevoEstado,
+            params.certificados_consecutivo,
+            userEmail
+          )
         }
       } else if (typeof params.constancias_consecutivo !== "undefined") {
         modificarEstadoConstanciaLogistica(
@@ -284,7 +305,11 @@ export function PdfView() {
         </div>
 
         <div className="mt-4">
-          <PdfGenerator onDataGenerated={showPDF} infoDocumento={infoDocumento} /> {/* Generar PDF */}
+          <PdfGenerator
+            onDataGenerated={showPDF}
+            infoDocumento={infoDocumento}
+          />{" "}
+          {/* Generar PDF */}
         </div>
         {mostrarBotones && (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -298,7 +323,7 @@ export function PdfView() {
                 ></CreateButton>
               </div>
             )}
-            {rolUsuario != "Administracion" && (
+             {rolUsuario != "Administracion" && (
               <div className="mr-4 mb-4">
                 <CreateButton
                   colorClass="bg-gris-claro w-150 h-10"
@@ -309,7 +334,22 @@ export function PdfView() {
               </div>
             )}
 
-            {rolUsuario == "Administracion" && (
+
+             {rolUsuario == "Administracion" && (
+              <div className="mr-4 mb-4">
+                <CreateButton
+                colorClass="bg-verde-claro w-150 h-10"
+                selected={false}
+                onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                text="Aceptar"
+              ></CreateButton>
+              </div>
+            )} 
+
+            
+          </div>
+        )}
+        { mostrarBotonAnular && rolUsuario == "Administracion" && (
               <div className="mr-4 mb-4">
                 <CreateButton
                   colorClass="bg-naranja w-150 h-10"
@@ -319,8 +359,6 @@ export function PdfView() {
                 ></CreateButton>
               </div>
             )}
-          </div>
-        )}
 
         {isPopupOpen && (
           <PopUp

@@ -16,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 import {
   AbacoLogobase64,
   firmaRepresentanteLegal,
-  // firmaRevisorFiscal,
 } from "./utilities";
 import { obtenerDetalleFactura } from "../servicios/servicios";
 import { useParams } from "react-router";
@@ -35,6 +34,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const rolUsuarioAnular = "R_Anulado";
+  const rolUsuarioAdministrador = "R_Administrativa";
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
   const [revisorFiscalSignature, setRevisorFiscalSignature] = useState(null);
   const [firmaCargada, setFirmaCargada] = useState(false);
@@ -44,14 +44,11 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const db = getFirestore();
 
   useEffect(() => {
-    console.log("userUid", userUid);
 
-    if (userUid) {
+    
       const storage = getStorage();
-      const storageRef = ref(storage, `firmas/${userUid}.jpg`);
+      const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
 
-      console.log("userUid2", userUid);
-      console.log("storageRef", storageRef);
 
       let fileUrl;
 
@@ -63,7 +60,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
             console.log("doubleBase64EncodedFile", doubleBase64EncodedFile);
 
-            // El usuario tiene una firma almacenada, puedes cargarla desde Firestore
+            // El usuario tiene una firma almacenada
             setRevisorFiscalSignature(doubleBase64EncodedFile);
             setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
           });
@@ -84,7 +81,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           };
           reader.readAsDataURL(blob);
         });
-    }
+    
   }, []);
 
   const handleSignatureUpload = async (signatureImage) => {
@@ -93,11 +90,9 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       const user = auth.currentUser;
       console.log("user", user);
       const storage = getStorage();
-      const storageRef = ref(storage, `firmas/${user.uid}.jpg`);
+      const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
 
       await uploadString(storageRef, signatureImage, "data_url");
-
-      console.log("signatureImage", signatureImage);
 
       setRevisorFiscalSignature(signatureImage);
       location.reload();
@@ -137,10 +132,8 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       console.log("existingFolder: ", existingFolder);
 
       if (existingFolder) {
-        // La carpeta ya existe, actualiza el parentFolderId para la próxima iteración
         parentFolderId = existingFolder.id;
       } else {
-        // La carpeta no existe, créala y actualiza el parentFolderId para la próxima iteración
         const newFolderId = await createFolder(folder, parentFolderId);
         console.log("newFolderId: ", newFolderId);
         parentFolderId = newFolderId;
@@ -453,7 +446,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
               widths: ["20%", "20%", "40%", "20%"],
               body: [],
             },
-            //layout: "noBorders",
           };
 
           dynamicTable.table.body.push([
@@ -522,18 +514,23 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
       if (tipoDocumento == "certificado") {
         if (
+          infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
           infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-          infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
+          infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" 
         ) {
           let designFirmaRevisorFiscal;
+          console.log(designFirmaRevisorFiscal)
 
           if (revisorFiscalSignature) {
+            console.log("primera condicion")
+            console.log(revisorFiscalSignature)
             designFirmaRevisorFiscal = {
               image: revisorFiscalSignature,
               fit: [70, 50],
             };
           } else {
+            console.log("entre la segunda condicion")
             // Muestra algún mensaje o contenido alternativo si la firma no está presente
             designFirmaRevisorFiscal = {
               text: "Firma del Revisor Fiscal no disponible",
@@ -763,6 +760,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           );
         } else if (
           tipoDocumento == "certificado" &&
+          infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
           infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" &&

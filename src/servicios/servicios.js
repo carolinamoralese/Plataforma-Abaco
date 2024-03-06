@@ -87,6 +87,27 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
     })
 }
 
+export const modificarEstadoCertificadoAdministrador = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+    let opciones = {
+        method: "POST",
+        
+      };
+    let parametros =  new URLSearchParams({
+        authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_MODIFICAR_ESTADOS_CERTIFICADOS_ADMINISTRADOR,
+        dataToAdd: nuevoEstado,
+        consecutivo,
+        dataToAdd2: correo,
+        dataToAdd3: motivoRechazo,
+
+    })
+    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_ADMINISTRADOR+"?"+parametros, opciones)
+    .then((respuesta) => respuesta)
+    .catch((error) => {
+        console.log(error)
+        throw error.mensaje;
+    })
+}
+
 export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
