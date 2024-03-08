@@ -129,6 +129,26 @@ export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, cor
     })
 }
 
+export const modificarEstadoConstanciaAdministrador = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+    let opciones = {
+        method: "POST",
+        
+      };
+    let parametros =  new URLSearchParams({
+        authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_MODIFICAR_ESTADOS_CONSTANCIA_ADMINISTRADOR,
+        dataToAdd: nuevoEstado,
+        consecutivo,
+        dataToAdd2: correo,
+        dataToAdd3: motivoRechazo,
+
+    })
+    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_ADMINISTRADOR+"?"+parametros, opciones)
+    .then((respuesta) => console.log(respuesta))
+    .catch((error) => {
+        console.log(error)
+        throw error.mensaje;
+    })
+}
 
 export const obtenerUsuarios = () => {
     let opciones = {
