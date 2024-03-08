@@ -8,7 +8,7 @@ import Group from "../assets/Group.png";
 import { FaSyncAlt, FaSpinner } from "react-icons/fa";
 
 export function Records() {
-  const [selectedOption, setSelectedOption] = useState(localStorage.getItem("usuarioRol") === "Administracion" ? "Firmados" : "Pendientes");
+  const [selectedOption, setSelectedOption] = useState("Pendientes");
   const [documentos, setDocumentos] = useState([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState([]);
   const [forceUpdate, setForceUpdate] = useState(false);
@@ -17,6 +17,9 @@ export function Records() {
   const usuarioRol = localStorage.getItem("usuarioRol");
   const propiedadEmpresa = "Empresa";
   const rolUsuariologistica = "R_Logistica";
+  const rolUsuarioAdministrador = "R_Administrativa";
+  const nombreBotonPendientes =
+    usuarioRol == "Administracion" ? "Borradores" : "Pendientes";
 
   const handleRefreshClick = () => {
     setIsUpdating(true);
@@ -51,51 +54,21 @@ export function Records() {
       if (rolUsuario == "Logistica") {
         if (estado == "Pendientes") {
           documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica] === ""
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica] === ""
           );
         } else if (estado == "Aceptados") {
           documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
           );
         } else if (estado == "Firmados") {
           documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
-          );
-        } else if (estado == "Rechazados") {
-          documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "NO"
-          );
-        }
-      }
-
-      if (rolUsuario == "Contabilidad") {
-        if (estado == "Pendientes") {
-          documentosFiltrados = [];
-        } else if (estado == "Aceptados") {
-          documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
-          );
-        } else if (estado == "Firmados") {
-          documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
-          );
-        } else if (estado == "Rechazados") {
-          documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "NO"
-          );
-        }
-      }
-
-      if (rolUsuario == "Fiscal") {
-        if (estado == "Pendientes") {
-          documentosFiltrados = [];
-        } else if (estado == "Aceptados") {
-          documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
-          );
-        } else if (estado == "Firmados") {
-          documentosFiltrados = documentosFiltrados.filter(
-            (documento) => documento[rolUsuariologistica].toUpperCase() === "SI"
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
           );
         } else if (estado == "Rechazados") {
           documentosFiltrados = documentosFiltrados.filter(
@@ -108,17 +81,76 @@ export function Records() {
         if (estado == "Pendientes") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
-            documento[rolUsuariologistica].toUpperCase() === "SI"
+              documento[rolUsuarioAdministrador] === "" &&
+              documento[rolUsuariologistica] === ""
+          );
+        } else if (estado == "Aceptados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
           );
         } else if (estado == "Firmados") {
           documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
               documento[rolUsuariologistica].toUpperCase() === "SI"
           );
         } else if (estado == "Rechazados") {
           documentosFiltrados = documentosFiltrados.filter(
+            (documento) => documento[rolUsuariologistica].toUpperCase() === "NO"
+          );
+        }
+      }
+
+      if (rolUsuario == "Contabilidad") {
+        if (estado == "Pendientes") {
+          documentosFiltrados = documentosFiltrados.filter(
             (documento) =>
-              documento[rolUsuariologistica].toUpperCase() === "NO"
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica] === ""
+          );
+        } else if (estado == "Aceptados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
+          );
+        } else if (estado == "Firmados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
+          );
+        } else if (estado == "Rechazados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) => documento[rolUsuariologistica].toUpperCase() === "NO"
+          );
+        }
+      }
+
+      if (rolUsuario == "Fiscal") {
+        if (estado == "Pendientes") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica] === ""
+          );
+        } else if (estado == "Aceptados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
+          );
+        } else if (estado == "Firmados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) =>
+              documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+              documento[rolUsuariologistica].toUpperCase() === "SI"
+          );
+        } else if (estado == "Rechazados") {
+          documentosFiltrados = documentosFiltrados.filter(
+            (documento) => documento[rolUsuariologistica].toUpperCase() === "NO"
           );
         }
       }
@@ -173,17 +205,16 @@ export function Records() {
         className="relative mt-5 flex flex-col items-center ml-40"
       >
         <div className="flex justify-center">
-        {usuarioRol !=
-            "Administracion" && (
-              <div className="mr-4">
-                <CreateButton
-                  colorClass="bg-naranja h-20"
-                  selected={selectedOption === "Pendientes"}
-                  onClick={() => handleButtonClick("Pendientes")}
-                  text="Pendientes"
-                ></CreateButton>
-              </div>
-            )}
+       
+            <div className="mr-4">
+              <CreateButton
+                colorClass="bg-naranja h-20"
+                selected={selectedOption === "Pendientes"}
+                onClick={() => handleButtonClick("Pendientes")}
+                text={nombreBotonPendientes}
+              ></CreateButton>
+            </div>
+         
           <div className="mr-4">
             <CreateButton
               colorClass="bg-amarillo h-20"

@@ -374,6 +374,8 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
         });
       });
 
+      console.log(documento.bottomParagraphs,9999)
+
       if (documento.bottomParagraphs) {
         if (
           itemsFactura.length > 0 &&
@@ -501,7 +503,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
         if (
           documento.bottomParagraphs !== undefined &&
-          documento.bottomParagraphs > 0
+          documento.bottomParagraphs.length > 0
         ) {
           documento.bottomParagraphs.forEach((paragraph) => {
             content.push({
@@ -555,7 +557,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           });
         }
       } else if (tipoDocumento == "constancia") {
-        if (infoDocumento[rolUsuariologistica].toUpperCase() === "SI") {
+        if (infoDocumento[rolUsuariologistica].toUpperCase() === "SI" && infoDocumento[rolUsuarioAdministrador].toUpperCase()=== "SI") {
           content.push({
             image: firmaRepresentanteLegal,
             fit: [70, 50],

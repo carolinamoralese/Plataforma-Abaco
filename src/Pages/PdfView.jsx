@@ -9,6 +9,7 @@ import { modificarEstadoCertificadoContabilidad } from "../servicios/servicios";
 import { modificarEstadoCertificadoRevisorFiscal } from "../servicios/servicios";
 import { modificarEstadoConstanciaLogistica } from "../servicios/servicios";
 import { modificarEstadoCertificadoAdministrador } from "../servicios/servicios";
+import { modificarEstadoConstanciaAdministrador } from "../servicios/servicios";
 import { anularCertificado } from "../servicios/servicios";
 import {
   obtenerCertificados,
@@ -26,13 +27,13 @@ export function PdfView() {
   const rolUsuario = localStorage.getItem("usuarioRol");
   const [mostrarBotones, setMostrarBotones] = useState(false);
   const [infoDocumento, setInfoDocumento] = useState(null);
-  const [mostrarBotonAnular, setMostrarBotonAnular] = useState(false)
+  const [mostrarBotonAnular, setMostrarBotonAnular] = useState(false);
   const [urlToRedirect, setUrlToRedirect] = useState("/home");
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
   const rolUsuarioAnulador = "R_Anulado";
-  const rolUsuarioAdministrador = "R_Administrativa"
+  const rolUsuarioAdministrador = "R_Administrativa";
   const userEmail = localStorage.getItem("userEmail");
 
   const showPDF = (pdfBlob) => {
@@ -56,25 +57,25 @@ export function PdfView() {
           );
           if (
             rolUsuario == "Administracion" &&
-            documento[rolUsuarioAdministrador].toUpperCase() ===""
+            documento[rolUsuarioAdministrador].toUpperCase() === ""
           ) {
             setMostrarBotones(true);
           } else if (
             rolUsuario == "Logistica" &&
-            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
+            documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
             documento[rolUsuariologistica] === ""
           ) {
             setMostrarBotones(true);
           } else if (
             rolUsuario == "Contabilidad" &&
-            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
+            documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
             documento[rolUsuariologistica].toUpperCase() === "SI" &&
             documento[rolUsuarioCotabilidad] === ""
           ) {
             setMostrarBotones(true);
           } else if (
             rolUsuario == "Fiscal" &&
-            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
+            documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
             documento[rolUsuariologistica].toUpperCase() === "SI" &&
             documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
             documento[rolUsuarioRevisorFiscal] === ""
@@ -87,12 +88,12 @@ export function PdfView() {
             setMostrarBotones(false);
           } else if (
             rolUsuario == "Administracion" &&
-            documento[rolUsuarioAdministrador].toUpperCase() ==="SI" &&
+            documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
             documento[rolUsuariologistica].toUpperCase() === "SI" &&
             documento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
             documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
           ) {
-            setMostrarBotonAnular(true)
+            setMostrarBotonAnular(true);
             //setMostrarBotones(true);
           }
         } else if (typeof params.constancias_consecutivo !== "undefined") {
@@ -105,6 +106,11 @@ export function PdfView() {
             `/pdf-view/constancias/${params.constancias_consecutivo}`
           );
           if (
+            rolUsuario == "Administracion" &&
+            documento[rolUsuarioAdministrador] === ""
+          ) {
+            setMostrarBotones(true);
+          } else if (
             rolUsuario == "Logistica" &&
             documento[rolUsuariologistica] === ""
           ) {
@@ -157,6 +163,7 @@ export function PdfView() {
           console.log("Motivo de rechazo:", motivoRechazo);
 
           if (typeof params.certificados_consecutivo !== "undefined") {
+            console.log("dani");
             if (rolDelUsuario == "Logistica") {
               modificarEstadoCertificadoLogistica(
                 nuevoEstado,
@@ -236,7 +243,7 @@ export function PdfView() {
           setIsPopupOpen(true);
         }
       });
-    } else {
+    } else {// esta condicion es para aceptar los documentos
       if (typeof params.certificados_consecutivo !== "undefined") {
         if (rolDelUsuario == "Logistica") {
           modificarEstadoCertificadoLogistica(
@@ -256,19 +263,28 @@ export function PdfView() {
             params.certificados_consecutivo,
             userEmail
           );
-        } else if(rolDelUsuario == "Administracion") {
+        } else if (rolDelUsuario == "Administracion") {
+          console.log("pepa");
           modificarEstadoCertificadoAdministrador(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
-          )
+          );
         }
       } else if (typeof params.constancias_consecutivo !== "undefined") {
-        modificarEstadoConstanciaLogistica(
-          nuevoEstado,
-          params.constancias_consecutivo,
-          userEmail
-        );
+        if (rolDelUsuario == "Administracion") {
+          modificarEstadoConstanciaAdministrador(
+            nuevoEstado,
+            params.constancias_consecutivo,
+            userEmail
+          );
+        } else if (rolDelUsuario == "Logistica") {
+          modificarEstadoConstanciaLogistica(
+            nuevoEstado,
+            params.constancias_consecutivo,
+            userEmail
+          );
+        }
       }
       setIsPopupOpen(true);
     }
@@ -323,7 +339,7 @@ export function PdfView() {
                 ></CreateButton>
               </div>
             )}
-             {rolUsuario != "Administracion" && (
+            {rolUsuario != "Administracion" && (
               <div className="mr-4 mb-4">
                 <CreateButton
                   colorClass="bg-gris-claro w-150 h-10"
@@ -334,31 +350,28 @@ export function PdfView() {
               </div>
             )}
 
-
-             {rolUsuario == "Administracion" && (
+            {rolUsuario == "Administracion" && (
               <div className="mr-4 mb-4">
                 <CreateButton
-                colorClass="bg-verde-claro w-150 h-10"
-                selected={false}
-                onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
-                text="Aceptar"
-              ></CreateButton>
-              </div>
-            )} 
-
-            
-          </div>
-        )}
-        { mostrarBotonAnular && rolUsuario == "Administracion" && (
-              <div className="mr-4 mb-4">
-                <CreateButton
-                  colorClass="bg-naranja w-150 h-10"
+                  colorClass="bg-verde-claro w-150 h-10"
                   selected={false}
-                  onClick={() => cambiarEstadoDocumento("ANULAR", rolUsuario)}
-                  text="Anular"
+                  onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                  text="Aceptar"
                 ></CreateButton>
               </div>
             )}
+          </div>
+        )}
+        {mostrarBotonAnular && rolUsuario == "Administracion" && (
+          <div className="mr-4 mb-4">
+            <CreateButton
+              colorClass="bg-naranja w-150 h-10"
+              selected={false}
+              onClick={() => cambiarEstadoDocumento("ANULAR", rolUsuario)}
+              text="Anular"
+            ></CreateButton>
+          </div>
+        )}
 
         {isPopupOpen && (
           <PopUp
