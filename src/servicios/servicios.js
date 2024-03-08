@@ -7,7 +7,6 @@ export const obtenerCertificados = () => {
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS+"?"+parametros, {method:"POST"})
     .then((respuesta) => respuesta.json())
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -19,7 +18,6 @@ export const obtenerConstancias = () => {
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS+"?"+parametros, {method:"POST"})
     .then((respuesta) => respuesta.json())
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -40,7 +38,6 @@ export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, co
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_LOGISTICA+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -61,7 +58,6 @@ export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo,
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_CONTABILIDAD+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -82,7 +78,6 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_REVISOR_FISCAL+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -103,7 +98,6 @@ export const modificarEstadoCertificadoAdministrador = (nuevoEstado, consecutivo
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_ADMINISTRADOR+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -122,9 +116,9 @@ export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, cor
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_LOGISTICA+"?"+parametros, opciones)
-    .then((respuesta) => console.log(respuesta))
+    .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
+
         throw error.mensaje;
     })
 }
@@ -143,9 +137,8 @@ export const modificarEstadoConstanciaAdministrador = (nuevoEstado, consecutivo,
 
     })
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_ADMINISTRADOR+"?"+parametros, opciones)
-    .then((respuesta) => console.log(respuesta))
+    .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -161,7 +154,6 @@ export const obtenerUsuarios = () => {
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_USUARIOS+"?"+parametros, opciones)
     .then((respuesta) => respuesta.json())
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -179,7 +171,6 @@ export const obtenerDetalleFactura = () => {
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_DETALLES_FACTURAS+"?"+parametros, opciones)
     .then((respuesta) => respuesta.json())
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }
@@ -199,7 +190,6 @@ export const anularCertificado = (nuevoEstado, consecutivo, correo, motivoAnulac
     return fetch(VARIABLES_ENTORNO.REACT_APP_URL_ANULAR_CERTIFICADOS+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
-        console.log(error)
         throw error.mensaje;
     })
 }

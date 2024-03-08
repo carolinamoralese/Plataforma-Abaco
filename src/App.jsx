@@ -38,7 +38,6 @@ function AppRoutes() {
           } else {
             setUser(null);
             mostrarAlertaCorreoNoRegistrado(user.email);
-            console.log(user.email,100);
           }
         })
         .catch((error) => {

@@ -160,10 +160,9 @@ export function PdfView() {
       }).then((result) => {
         if (result.isConfirmed) {
           const motivoRechazo = result.value;
-          console.log("Motivo de rechazo:", motivoRechazo);
 
           if (typeof params.certificados_consecutivo !== "undefined") {
-            console.log("dani");
+
             if (rolDelUsuario == "Logistica") {
               modificarEstadoCertificadoLogistica(
                 nuevoEstado,
@@ -228,7 +227,6 @@ export function PdfView() {
       }).then((result) => {
         if (result.isConfirmed) {
           const motivoAnulacion = result.value;
-          console.log("Motivo de anulación:", motivoAnulacion);
 
           if (typeof params.certificados_consecutivo !== "undefined") {
             if (rolDelUsuario == "Administracion") {
@@ -264,7 +262,6 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Administracion") {
-          console.log("pepa");
           modificarEstadoCertificadoAdministrador(
             nuevoEstado,
             params.certificados_consecutivo,

@@ -13,10 +13,7 @@ import "pdfmake/build/vfs_fonts";
 import PropTypes from "prop-types";
 import htmlToPdfmake from "html-to-pdfmake";
 import { useNavigate } from "react-router-dom";
-import {
-  AbacoLogobase64,
-  firmaRepresentanteLegal,
-} from "./utilities";
+import { AbacoLogobase64, firmaRepresentanteLegal } from "./utilities";
 import { obtenerDetalleFactura } from "../servicios/servicios";
 import { useParams } from "react-router";
 import { VARIABLES_ENTORNO } from "../../env";
@@ -44,51 +41,39 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const db = getFirestore();
 
   useEffect(() => {
+    const storage = getStorage();
+    const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
 
-    
-      const storage = getStorage();
-      const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
+    let fileUrl;
 
-
-      let fileUrl;
-
-      getDownloadURL(storageRef).then((url) => {
-        fileUrl = url;
-        console.log("url", url);
-        fetchAsBlob(url).then((blob) => {
-          console.log("blob", blob);
-          convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
-            console.log("doubleBase64EncodedFile", doubleBase64EncodedFile);
-
-            // El usuario tiene una firma almacenada
-            setRevisorFiscalSignature(doubleBase64EncodedFile);
-            setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
-          });
+    getDownloadURL(storageRef).then((url) => {
+      fileUrl = url;
+      fetchAsBlob(url).then((blob) => {
+        convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
+          // El usuario tiene una firma almacenada
+          setRevisorFiscalSignature(doubleBase64EncodedFile);
+          setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
         });
       });
+    });
 
-      console.log("fileUrl", fileUrl);
+    const fetchAsBlob = (url) => fetch(url).then((response) => response.blob());
 
-      const fetchAsBlob = (url) =>
-        fetch(url).then((response) => response.blob());
-
-      const convertBlobToBase64 = (blob) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = reject;
-          reader.onload = () => {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(blob);
-        });
-    
+    const convertBlobToBase64 = (blob) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          resolve(reader.result);
+        };
+        reader.readAsDataURL(blob);
+      });
   }, []);
 
   const handleSignatureUpload = async (signatureImage) => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
-      console.log("user", user);
       const storage = getStorage();
       const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
 
@@ -129,20 +114,16 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       const folder = folders[i];
       const existingFolder = await checkIfFolderExists(folder, parentFolderId);
 
-      console.log("existingFolder: ", existingFolder);
-
       if (existingFolder) {
         parentFolderId = existingFolder.id;
       } else {
         const newFolderId = await createFolder(folder, parentFolderId);
-        console.log("newFolderId: ", newFolderId);
         parentFolderId = newFolderId;
       }
     }
     checkIfFileExistsInGoogleDrive(fileName, parentFolderId)
       .then(function (existingFile) {
         if (existingFile) {
-          console.log("El archivo ya existe en Google Drive:", existingFile);
           return;
         } else {
           var fileMetadata = {
@@ -220,7 +201,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           resolve(window.gapi.client);
         });
       });
-      console.log("API de Google Drive cargada correctamente");
     } catch (error) {
       console.error("Error al cargar la API de Google Drive:", error);
       throw error;
@@ -374,8 +354,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
         });
       });
 
-      console.log(documento.bottomParagraphs,9999)
-
       if (documento.bottomParagraphs) {
         if (
           itemsFactura.length > 0 &&
@@ -389,10 +367,10 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           };
 
           dynamicTable.table.body.push([
-            { text: "Nro Factura", style: "tableHeader" },
-            { text: "Fecha Factura", style: "tableHeader" },
-            { text: "Desc Articulo", style: "tableHeader" },
-            { text: "Costo Unitario", style: "tableHeader" },
+            { text: "NRO FACTURA", style: "tableHeader" },
+            { text: "FECHA FACTURA", style: "tableHeader" },
+            { text: "DESC ARTÍCULO", style: "tableHeader" },
+            { text: "COSTO UNITARIO", style: "tableHeader" },
           ]);
 
           itemsFactura.forEach((item) => {
@@ -451,10 +429,10 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           };
 
           dynamicTable.table.body.push([
-            { text: "Nro Factura", style: "tableHeader" },
-            { text: "Fecha Factura", style: "tableHeader" },
-            { text: "Desc Articulo", style: "tableHeader" },
-            { text: "Costo Total", style: "tableHeader" },
+            { text: "NRO FACTURA", style: "tableHeader" },
+            { text: "FECHA FACTURA", style: "tableHeader" },
+            { text: "DESC ARTÍCULO", style: "tableHeader" },
+            { text: "COSTO TOTAL", style: "tableHeader" },
           ]);
 
           let costoTotal = 0;
@@ -519,20 +497,16 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
           infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-          infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" 
+          infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
         ) {
           let designFirmaRevisorFiscal;
-          console.log(designFirmaRevisorFiscal)
 
           if (revisorFiscalSignature) {
-            console.log("primera condicion")
-            console.log(revisorFiscalSignature)
             designFirmaRevisorFiscal = {
               image: revisorFiscalSignature,
               fit: [70, 50],
             };
           } else {
-            console.log("entre la segunda condicion")
             // Muestra algún mensaje o contenido alternativo si la firma no está presente
             designFirmaRevisorFiscal = {
               text: "Firma del Revisor Fiscal no disponible",
@@ -557,7 +531,10 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           });
         }
       } else if (tipoDocumento == "constancia") {
-        if (infoDocumento[rolUsuariologistica].toUpperCase() === "SI" && infoDocumento[rolUsuarioAdministrador].toUpperCase()=== "SI") {
+        if (
+          infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
+          infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI"
+        ) {
           content.push({
             image: firmaRepresentanteLegal,
             fit: [70, 50],
@@ -610,8 +587,8 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           text: htmlToPdfmake(
             '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
               documento.revisorFiscal.designatedBy +
-              "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-              "<br></br><br></br></p>"
+              "&nbsp</p>"
+              
           ),
         });
       }
@@ -690,7 +667,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
                 text:
                   documento.address[0] +
                   "\n" +
-                  "Telefono: " +
+                  "Teléfono: " +
                   documento.address[1] +
                   "\n" +
                   documento.address[2],
