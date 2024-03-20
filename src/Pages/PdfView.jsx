@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar, Barrasuperior } from "../Components/Navbar/index";
+import {
+  ref,
+  getStorage,
+  uploadString,
+  getDownloadURL,
+} from "firebase/storage";
 import PdfGenerator from "../Utilities/PDFGenerator";
 import Group from "../assets/Group.png";
 import { CreateButton } from "../Components/Button/Button";
@@ -29,6 +35,7 @@ export function PdfView() {
   const [infoDocumento, setInfoDocumento] = useState(null);
   const [mostrarBotonAnular, setMostrarBotonAnular] = useState(false);
   const [urlToRedirect, setUrlToRedirect] = useState("/home");
+  const [firmaFiscalDocumento, setFirmaFiscalDocumento] = useState(null);
   const rolUsuariologistica = "R_Logistica";
   const rolUsuarioCotabilidad = "R_Contabilidad";
   const rolUsuarioRevisorFiscal = "R_Fiscal";
@@ -129,6 +136,32 @@ export function PdfView() {
     }
   }, []);
 
+  const cargarFirmaFiscal = (signatureImage) => {
+    const storage = getStorage();
+    if (typeof params.certificados_consecutivo !== "undefined") {
+      const storageRefFirmaDocumento = ref(
+        storage,
+        `firmas/certificados/certificado_${params.certificados_consecutivo}.jpg`
+      );
+      console.log("storageRefFirmaDocumento: ", storageRefFirmaDocumento);
+
+      uploadString(storageRefFirmaDocumento, signatureImage, "data_url")
+        .then((snapshot) => {
+          return getDownloadURL(snapshot.ref);
+        })
+        .then((downloadURL) => {
+          setFirmaFiscalDocumento(downloadURL);
+        })
+        .catch((error) => {
+          console.error("Error al cargar la firma fiscal:", error);
+        });
+    }
+  };
+
+  const actualizarFirmaFiscal = (signatureImage) => {
+    setFirmaFiscalDocumento(signatureImage);
+  };
+
   function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (nuevoEstado === rechazar) {
       Swal.fire({
@@ -162,7 +195,6 @@ export function PdfView() {
           const motivoRechazo = result.value;
 
           if (typeof params.certificados_consecutivo !== "undefined") {
-
             if (rolDelUsuario == "Logistica") {
               modificarEstadoCertificadoLogistica(
                 nuevoEstado,
@@ -241,7 +273,8 @@ export function PdfView() {
           setIsPopupOpen(true);
         }
       });
-    } else {// esta condicion es para aceptar los documentos
+    } else {
+      // esta condicion es para aceptar los documentos
       if (typeof params.certificados_consecutivo !== "undefined") {
         if (rolDelUsuario == "Logistica") {
           modificarEstadoCertificadoLogistica(
@@ -256,6 +289,7 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Fiscal") {
+          cargarFirmaFiscal(firmaFiscalDocumento);
           modificarEstadoCertificadoRevisorFiscal(
             nuevoEstado,
             params.certificados_consecutivo,
@@ -321,12 +355,13 @@ export function PdfView() {
           <PdfGenerator
             onDataGenerated={showPDF}
             infoDocumento={infoDocumento}
+            actualizarFirmaFiscal={actualizarFirmaFiscal}
           />{" "}
           {/* Generar PDF */}
         </div>
         {mostrarBotones && (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            {rolUsuario != "Administracion" && (
+            {rolUsuario != "Administracion" && rolUsuario != "Fiscal" && (
               <div className="mr-4 mb-4">
                 <CreateButton
                   colorClass="bg-verde-claro w-150 h-10"
@@ -343,6 +378,17 @@ export function PdfView() {
                   selected={false}
                   onClick={() => cambiarEstadoDocumento(rechazar, rolUsuario)}
                   text="Rechazar"
+                ></CreateButton>
+              </div>
+            )}
+
+            {firmaFiscalDocumento && rolUsuario == "Fiscal" && (
+              <div className="mr-4 mb-4">
+                <CreateButton
+                  colorClass="bg-verde-claro w-150 h-10"
+                  selected={false}
+                  onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                  text="Aceptar"
                 ></CreateButton>
               </div>
             )}

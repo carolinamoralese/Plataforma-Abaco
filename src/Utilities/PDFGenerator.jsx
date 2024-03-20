@@ -7,6 +7,7 @@ import {
   uploadBytes,
   uploadString,
   getDownloadURL,
+  deleteObject,
 } from "firebase/storage";
 import * as pdfMake from "pdfmake/build/pdfmake";
 import "pdfmake/build/vfs_fonts";
@@ -21,10 +22,15 @@ import pdfFonts from "./vfs_fonts";
 import { gapi } from "gapi-script"; //se debe mantener para la autenticación con la API de Google
 import { FaSpinner } from "react-icons/fa";
 import SignatureUploadForm from "../Components/signatureUpLoadForm";
+import { CreateButton } from "../Components/Button/Button";
 
 pdfMake.vfs = pdfFonts;
 
-function PdfGenerator({ onDataGenerated, infoDocumento }) {
+function PdfGenerator({
+  onDataGenerated,
+  infoDocumento,
+  actualizarFirmaFiscal,
+}) {
   const params = useParams();
   const navigate = useNavigate();
   const rolUsuariologistica = "R_Logistica";
@@ -35,14 +41,24 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
   const [revisorFiscalSignature, setRevisorFiscalSignature] = useState(null);
   const [firmaCargada, setFirmaCargada] = useState(false);
+
   const rolUsuario = localStorage.getItem("usuarioRol");
   const userUid = localStorage.getItem("userUid");
   let googleClient = null;
   const db = getFirestore();
 
+  let tipoDocumento;
+
+  if (typeof params.certificados_consecutivo !== "undefined") {
+    tipoDocumento = "certificado";
+  } else if (typeof params.constancias_consecutivo !== "undefined") {
+    tipoDocumento = "constancia";
+  }
+  console.log(tipoDocumento);
+
   useEffect(() => {
     const storage = getStorage();
-    const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
+    const storageRef = ref(storage, `firmas/revisor_fiscal/${userUid}.jpg`);
 
     let fileUrl;
 
@@ -53,6 +69,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           // El usuario tiene una firma almacenada
           setRevisorFiscalSignature(doubleBase64EncodedFile);
           setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
+          actualizarFirmaFiscal(doubleBase64EncodedFile);
         });
       });
     });
@@ -70,19 +87,73 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       });
   }, []);
 
+  const eliminarFirma = () => {
+    const storage = getStorage();
+    const storageRef = ref(storage, `firmas/revisor_fiscal/${userUid}.jpg`);
+    console.log(`firmas/revisor_fiscal/${userUid}.jpg`);
+    deleteObject(storageRef)
+      .then(() => {
+        console.log("Archivo eliminado exitosamente");
+        location.reload();
+      })
+      .catch((error) => {
+        console.error("Error al eliminar el archivo:", error);
+      });
+  };
+
   const handleSignatureUpload = async (signatureImage) => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
       const storage = getStorage();
-      const storageRef = ref(storage, `firmas/firma_revisor_fiscal.jpg`);
+      const storageRefFirmaFiscal = ref(
+        storage,
+        `firmas/revisor_fiscal/${userUid}.jpg`
+      );
 
-      await uploadString(storageRef, signatureImage, "data_url");
+      await uploadString(storageRefFirmaFiscal, signatureImage, "data_url");
+
+
+      actualizarFirmaFiscal(signatureImage);
 
       setRevisorFiscalSignature(signatureImage);
       location.reload();
     } catch (error) {
       console.error("Error al cargar la firma:", error);
+    }
+  };
+
+  const obtenerFirmaCertificado = async (consecutivo) => {
+    try {
+      const fetchAsBlob = (url) =>
+        fetch(url).then((response) => response.blob());
+
+      const convertBlobToBase64 = (blob) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(blob);
+        });
+
+      const storage = getStorage();
+      const storageRef = ref(
+        storage,
+        `firmas/certificados/certificado_${consecutivo}.jpg`
+      );
+
+      const url = await getDownloadURL(storageRef);
+      const blob = await fetchAsBlob(url);
+      const firmaBase64 = await convertBlobToBase64(blob);
+
+      console.log(firmaBase64);
+
+      return firmaBase64;
+    } catch (error) {
+      console.error("Error al obtener la firma:", error);
+      //throw error;
     }
   };
 
@@ -307,7 +378,12 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
     }
   };
 
-  const generatePDF = (data, infoDocumento, tipoDocumento, itemsFactura) => {
+  const generatePDF = async (
+    data,
+    infoDocumento,
+    tipoDocumento,
+    itemsFactura
+  ) => {
     if (infoDocumento == null) {
       return;
     }
@@ -332,18 +408,18 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
       let content = [];
 
-      content.push({
-        image: AbacoLogobase64,
-        width: 150,
-        height: 54.5,
-        alignment: "center",
-        margin: [0, -40, 0, 20],
-      });
+      // content.push({
+      //   image: AbacoLogobase64,
+      //   width: 150,
+      //   height: 54.5,
+      //   alignment: "center",
+      //   margin: [0, -40, 0, 20],
+      // });
 
       documento.titulos.forEach((titulo) => {
         content.push({
           text: htmlToPdfmake(titulo + "<br><br>"),
-          style: "header",
+          style: "titulo",
         });
       });
 
@@ -485,7 +561,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
         ) {
           documento.bottomParagraphs.forEach((paragraph) => {
             content.push({
-              text: htmlToPdfmake("<br></br>" + paragraph + "<br></br>"),
+              text: htmlToPdfmake(paragraph + "<br></br>"),
               style: "contenido",
             });
           });
@@ -499,11 +575,17 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
           infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
         ) {
+          console.log("aaaaaaaaa");
           let designFirmaRevisorFiscal;
+          let firmaDocumento;
 
-          if (revisorFiscalSignature) {
+          firmaDocumento = await obtenerFirmaCertificado(documento["hoja_No"]);
+
+          console.log(firmaDocumento, 87878787);
+
+          if (firmaDocumento) {
             designFirmaRevisorFiscal = {
-              image: revisorFiscalSignature,
+              image: firmaDocumento,
               fit: [70, 50],
             };
           } else {
@@ -588,7 +670,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
             '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
               documento.revisorFiscal.designatedBy +
               "&nbsp</p>"
-              
           ),
         });
       }
@@ -613,10 +694,20 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       }
 
       const documentDefinition = {
+        header: function () {
+          return {
+            image: AbacoLogobase64,
+            width: 150,
+            height: 54.5,
+            alignment: "center",
+            margin: [0, 10, 0, 0],
+          };
+        },
         content,
         styles: {
-          header: {
-            fontSize: 12,
+          titulo: {
+            fontSize: 16,
+            bold: true,
             alignment: "center",
           },
           contenido: {
@@ -627,7 +718,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
             display: "flex",
             alignment: "justify",
           },
-
           firmaRepresentante: {
             fontSize: 12,
             bold: true,
@@ -696,6 +786,7 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
             style: "footer",
           };
         },
+        pageMargins: [40, 80, 40, 80],
       };
 
       if (
@@ -772,8 +863,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        //const infoDocumento = JSON.parse(localStorage.getItem("infoDocumento"));
-
         if (typeof params.certificados_consecutivo !== "undefined") {
           let opciones = {
             method: "POST",
@@ -832,15 +921,6 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
 
   return (
     <div>
-      {rolUsuario === "Fiscal" && !revisorFiscalSignature ? (
-        // Muestra el formulario para cargar la firma si no está disponible
-        <SignatureUploadForm
-          onSignatureUpload={handleSignatureUpload}
-          disabled={firmaCargada} // Deshabilita el botón si la firma ya está cargada
-        />
-      ) : (
-        ""
-      )}
       {cargandoDocumento ? (
         <div
           style={{
@@ -857,13 +937,30 @@ function PdfGenerator({ onDataGenerated, infoDocumento }) {
       ) : (
         <p></p>
       )}
+      {tipoDocumento == "certificado" ? (
+        rolUsuario === "Fiscal" && revisorFiscalSignature ? (
+          <CreateButton
+            colorClass="bg-verde w-150 h-10 text-white mb-4 mt-4 "
+            text="Eliminar Firma"
+            onClick={() => eliminarFirma()}
+          ></CreateButton>
+        ) : (
+          rolUsuario === "Fiscal" && (
+            <SignatureUploadForm
+              onSignatureUpload={handleSignatureUpload}
+              disabled={firmaCargada} // Deshabilita el botón si la firma ya está cargada
+            />
+          )
+        )
+      ) : null}
     </div>
   );
 }
 
 PdfGenerator.propTypes = {
-  onDataGenerated: PropTypes.func.isRequired,
+  onDataGenerated: PropTypes.func,
   infoDocumento: PropTypes.object,
+  actualizarFirmaFiscal: PropTypes.func.isRequired,
 };
 
 export default PdfGenerator;
