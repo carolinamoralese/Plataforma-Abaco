@@ -143,7 +143,6 @@ export function PdfView() {
         storage,
         `firmas/certificados/certificado_${params.certificados_consecutivo}.jpg`
       );
-      console.log("storageRefFirmaDocumento: ", storageRefFirmaDocumento);
 
       uploadString(storageRefFirmaDocumento, signatureImage, "data_url")
         .then((snapshot) => {

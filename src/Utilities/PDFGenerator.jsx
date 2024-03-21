@@ -55,8 +55,6 @@ function PdfGenerator({
   } else if (typeof params.constancias_consecutivo !== "undefined") {
     tipoDocumento = "constancia";
   }
-  console.log(tipoDocumento);
-
   useEffect(() => {
     const storage = getStorage();
     const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
@@ -91,10 +89,8 @@ function PdfGenerator({
   const eliminarFirma = () => {
     const storage = getStorage();
     const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
-    console.log(`firmas/revisor_fiscal/${userEmail}.jpg`);
     deleteObject(storageRef)
       .then(() => {
-        console.log("Archivo eliminado exitosamente");
         location.reload();
       })
       .catch((error) => {
@@ -113,7 +109,6 @@ function PdfGenerator({
       );
 
       await uploadString(storageRefFirmaFiscal, signatureImage, "data_url");
-
 
       actualizarFirmaFiscal(signatureImage);
 
@@ -148,8 +143,6 @@ function PdfGenerator({
       const url = await getDownloadURL(storageRef);
       const blob = await fetchAsBlob(url);
       const firmaBase64 = await convertBlobToBase64(blob);
-
-      console.log(firmaBase64);
 
       return firmaBase64;
     } catch (error) {
@@ -576,13 +569,10 @@ function PdfGenerator({
           infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
           infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
         ) {
-          console.log("aaaaaaaaa");
           let designFirmaRevisorFiscal;
           let firmaDocumento;
 
           firmaDocumento = await obtenerFirmaCertificado(documento["hoja_No"]);
-
-          console.log(firmaDocumento, 87878787);
 
           if (firmaDocumento) {
             designFirmaRevisorFiscal = {
@@ -590,7 +580,6 @@ function PdfGenerator({
               fit: [70, 50],
             };
           } else {
-            // Muestra algún mensaje o contenido alternativo si la firma no está presente
             designFirmaRevisorFiscal = {
               text: "Firma del Revisor Fiscal no disponible",
               style: "informacionRevisado",
@@ -666,11 +655,14 @@ function PdfGenerator({
           ),
         });
 
+        const designatedByText =
+          documento.revisorFiscal.designatedBy.trim() + "                    ";
+
         content.push({
           text: htmlToPdfmake(
-            '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
-              documento.revisorFiscal.designatedBy +
-              "&nbsp</p>"
+            '<p style="text-align: left; font-size: 10pt; color:white;">representante legal;</p><p style="text-align: right; font-size: 10pt;">&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designado por: ' +
+              designatedByText +
+              "&nbsp;&nbsp;&nbsp</p>"
           ),
         });
       }
