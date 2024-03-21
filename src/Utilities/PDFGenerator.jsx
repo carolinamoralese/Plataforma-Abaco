@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, getFirestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import {
   getStorage,
   ref,
@@ -23,6 +23,7 @@ import { gapi } from "gapi-script"; //se debe mantener para la autenticación co
 import { FaSpinner } from "react-icons/fa";
 import SignatureUploadForm from "../Components/signatureUpLoadForm";
 import { CreateButton } from "../Components/Button/Button";
+const userEmail = localStorage.getItem("userEmail");
 
 pdfMake.vfs = pdfFonts;
 
@@ -58,7 +59,7 @@ function PdfGenerator({
 
   useEffect(() => {
     const storage = getStorage();
-    const storageRef = ref(storage, `firmas/revisor_fiscal/${userUid}.jpg`);
+    const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
 
     let fileUrl;
 
@@ -89,8 +90,8 @@ function PdfGenerator({
 
   const eliminarFirma = () => {
     const storage = getStorage();
-    const storageRef = ref(storage, `firmas/revisor_fiscal/${userUid}.jpg`);
-    console.log(`firmas/revisor_fiscal/${userUid}.jpg`);
+    const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
+    console.log(`firmas/revisor_fiscal/${userEmail}.jpg`);
     deleteObject(storageRef)
       .then(() => {
         console.log("Archivo eliminado exitosamente");
@@ -108,7 +109,7 @@ function PdfGenerator({
       const storage = getStorage();
       const storageRefFirmaFiscal = ref(
         storage,
-        `firmas/revisor_fiscal/${userUid}.jpg`
+        `firmas/revisor_fiscal/${userEmail}.jpg`
       );
 
       await uploadString(storageRefFirmaFiscal, signatureImage, "data_url");
