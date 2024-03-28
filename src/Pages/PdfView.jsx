@@ -136,7 +136,7 @@ export function PdfView() {
     }
   }, []);
 
-  const cargarFirmaFiscal = (signatureImage) => {
+  const cargarFirmaFiscal = async (signatureImage) => {
     const storage = getStorage();
     if (typeof params.certificados_consecutivo !== "undefined") {
       const storageRefFirmaDocumento = ref(
@@ -161,7 +161,7 @@ export function PdfView() {
     setFirmaFiscalDocumento(signatureImage);
   };
 
-  function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
+ async function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (nuevoEstado === rechazar) {
       Swal.fire({
         title: "Motivo de rechazo",
@@ -288,7 +288,7 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Fiscal") {
-          cargarFirmaFiscal(firmaFiscalDocumento);
+          await cargarFirmaFiscal(firmaFiscalDocumento);
           modificarEstadoCertificadoRevisorFiscal(
             nuevoEstado,
             params.certificados_consecutivo,

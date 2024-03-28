@@ -601,6 +601,12 @@ function PdfGenerator({
             },
             layout: "noBorders",
           });
+        } else {
+          content.push({
+            text: htmlToPdfmake(
+              "<br></br><br></br>"
+            ),
+          });
         }
       } else if (tipoDocumento == "constancia") {
         if (
@@ -613,7 +619,14 @@ function PdfGenerator({
             alignment: "left",
           });
         }
-      }
+        else {
+          content.push({
+            text: htmlToPdfmake(
+              "<br></br><br></br>"
+            ),
+          });
+        }
+      } 
 
       if (documento.representanteLegal && documento.revisorFiscal) {
         content.push({
