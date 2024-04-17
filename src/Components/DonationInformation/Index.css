@@ -1,0 +1,8 @@
+.even-row td {
+    background-color: #f0f0f0 !important; /* Color de fondo para las filas pares */
+  }
+  
+  .odd-row td {
+    background-color: #ffffff !important; /* Color de fondo para las filas impares */
+  }
+  

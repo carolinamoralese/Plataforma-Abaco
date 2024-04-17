@@ -26,6 +26,8 @@ import { CreateButton } from "../Components/Button/Button";
 const userEmail = localStorage.getItem("userEmail");
 
 pdfMake.vfs = pdfFonts;
+//pdfMake.vfs = pdfFonts;
+
 
 function PdfGenerator({
   onDataGenerated,
