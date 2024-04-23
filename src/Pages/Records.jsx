@@ -169,9 +169,9 @@ export function Records() {
     backgroundSize: "80% 100%",
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
-    width: "80%",
+    width: "100%",
     marginTop: "-30%",
-    height: "400px",
+    height: "700px",
   };
 
   const handleButtonClick = (estadoDocumento) => {
@@ -246,7 +246,7 @@ export function Records() {
             Cargando documentos
           </div>
         ) : (
-          <div>
+          <div className="mt-5">
             <DonationInformation
               documentos={documentosFiltrados}
               tipoDocumento={"constancias"}

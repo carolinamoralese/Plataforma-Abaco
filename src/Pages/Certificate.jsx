@@ -211,15 +211,15 @@ export function Certificate() {
     backgroundSize: "80% 100%",
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
-    width: "80%",
-    marginTop: "-30%",
-    height: "400px",
+    width: "100%",
+    marginTop: "-50%",
+    height: "700px",
   };
 
   return (
     <main>
       <Barrasuperior />
-      <Navbar />
+      <Navbar/>
       <div className="flex justify-end mr-10 mt-4 relative">
         <div className="mb-8 mr-10">
           <FaSyncAlt onClick={handleRefreshClick} size={30} />{" "}
@@ -234,7 +234,7 @@ export function Certificate() {
         style={certificateStyle}
         className="relative mt-5 flex flex-col items-center ml-40"
       >
-        <div className="flex justify-center">
+        <div className="flex justify-center ml-70">
           <div className="mr-4">
             <CreateButton
               colorClass="bg-verde w-fit h-20"
@@ -294,7 +294,7 @@ export function Certificate() {
             Cargando documentos
           </div>
         ) : (
-          <div>
+          <div className="mt-5 ml-70">
             <DonationInformation
               documentos={documentosFiltrados}
               tipoDocumento={"certificados"}
