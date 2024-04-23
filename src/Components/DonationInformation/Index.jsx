@@ -93,14 +93,7 @@ export function DonationInformation({ documentos, tipoDocumento }) {
     data: documentos,
     muiTableContainerProps : { sx : { maxHeight : '600px' } },
     muiTableBodyProps: {
-      // sx: {
-      //   //stripe the rows, make odd rows a darker color
-      //   '& td:nth-of-type(odd)': {
-      //     backgroundColor: '#f5f5f5',
-      //   },
-      // },
       sx: {
-        //stripe the rows, make odd rows a darker color
         '& tr:nth-of-type(odd) > td': {
           backgroundColor: '#f5f5f5',
         },
@@ -109,9 +102,6 @@ export function DonationInformation({ documentos, tipoDocumento }) {
     initialState: { pagination: { pageSize: 100, pageIndex: 0 }},
     enableStickyHeader: true,
     enableStickyFooter: true,
-   // muiTableContainerProps: { sx: { maxHeight: '600px' } },
-    
-
   });
 
   return (
