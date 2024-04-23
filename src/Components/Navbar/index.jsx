@@ -54,7 +54,7 @@ export const Navbar = () => {
   const activeStyle = "bg-amarillo text-white rounded-r-full w-60 h-8"; 
   
 return (
-<nav className="fixed left-0 mt-0 w-72 h-[90%] shadow-xl space-y-12">
+<nav className="fixed left-0 mt-0 w-72 h-[90%] shadow-xl space-y-12 z-10">
     <ul>
       <li className="mt-12">
       <NavLink 

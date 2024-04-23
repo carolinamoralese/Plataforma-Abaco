@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.even-row{
+    background-color: #040303 !important; /* Color de fondo para las filas pares */
+  }
+  
+  .odd-row{
+    background-color: #ffffff !important; /* Color de fondo para las filas impares */
+  }
+  
