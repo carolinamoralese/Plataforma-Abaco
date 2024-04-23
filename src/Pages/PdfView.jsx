@@ -57,7 +57,6 @@ export function PdfView() {
   } else if (typeof params.constancias_consecutivo !== "undefined") {
     tipoDocumento = "constancia";
   }
-  console.log(tipoDocumento)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -118,8 +117,6 @@ export function PdfView() {
           const documento = documentos.find(
             (doc) => doc["Hoja_No"] == params.constancias_consecutivo
           );
-          console.log(params.constancias_consecutivo);
-          console.log(documentos);
           setInfoDocumento(documento);
           setUrlToRedirect(
             `/pdf-view/constancias/${params.constancias_consecutivo}`
