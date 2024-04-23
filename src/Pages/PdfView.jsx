@@ -23,6 +23,7 @@ import {
 } from "../servicios/servicios";
 import { useParams } from "react-router";
 import PopUp from "../Components/PopUp";
+import { FaFileInvoiceDollar } from "react-icons/fa";
 import Swal from "sweetalert2";
 
 export function PdfView() {
@@ -48,6 +49,15 @@ export function PdfView() {
   };
   const aceptar = "SI";
   const rechazar = "NO";
+
+  let tipoDocumento;
+
+  if (typeof params.certificados_consecutivo !== "undefined") {
+    tipoDocumento = "certificado";
+  } else if (typeof params.constancias_consecutivo !== "undefined") {
+    tipoDocumento = "constancia";
+  }
+  console.log(tipoDocumento)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,6 +118,8 @@ export function PdfView() {
           const documento = documentos.find(
             (doc) => doc["Hoja_No"] == params.constancias_consecutivo
           );
+          console.log(params.constancias_consecutivo);
+          console.log(documentos);
           setInfoDocumento(documento);
           setUrlToRedirect(
             `/pdf-view/constancias/${params.constancias_consecutivo}`
@@ -161,7 +173,7 @@ export function PdfView() {
     setFirmaFiscalDocumento(signatureImage);
   };
 
- async function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
+  async function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     if (nuevoEstado === rechazar) {
       Swal.fire({
         title: "Motivo de rechazo",
@@ -325,29 +337,66 @@ export function PdfView() {
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
     width: "100%",
-    height: "400px",
-    position: "relative",
-    marginTop: "-30%",
+    height: "700px",
+    position: "absolute",
+    margin: "10%",
+    padding: "0",
+    paddingRight: "10%",
   };
 
   return (
     <>
       <Barrasuperior />
       <Navbar />
+
       <div
         style={homeStyle}
         className="relative mt-5 flex flex-col items-center ml-40"
       >
-        <div className="grid place-items-start">
-          {pdfData && (
-            <iframe
-              title="PDF Viewer"
-              src={pdfData}
-              width="800"
-              height="600"
-              frameBorder="0"
-            />
-          )}
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <iframe
+            title="PDF Viewer"
+            src={pdfData}
+            width="800"
+            height="600"
+            frameBorder="0"
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 50,
+              right: "-180px",
+              zIndex: 1,
+            }}
+          >
+            {tipoDocumento == "certificado" && (
+              <div style={{ textAlign: "center" }}>
+                <FaFileInvoiceDollar
+                  size={80}
+                  color="white"
+                  style={{
+                    backgroundColor: "black",
+                    borderRadius: "30%",
+                    padding: "10px",
+                    cursor: "pointer",
+                    marginLeft: "20%",
+                  }}
+                  onClick={() => {
+                    window.open(infoDocumento.link_insumos, "_blank");
+                  }}
+                />
+                <p style={{ marginTop: "10px", color: "black" }}>
+                  Visualizar Facturas
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mt-4">
@@ -358,6 +407,7 @@ export function PdfView() {
           />{" "}
           {/* Generar PDF */}
         </div>
+
         {mostrarBotones && (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             {rolUsuario != "Administracion" && rolUsuario != "Fiscal" && (

@@ -28,7 +28,6 @@ const userEmail = localStorage.getItem("userEmail");
 pdfMake.vfs = pdfFonts;
 //pdfMake.vfs = pdfFonts;
 
-
 function PdfGenerator({
   onDataGenerated,
   infoDocumento,
@@ -58,34 +57,37 @@ function PdfGenerator({
     tipoDocumento = "constancia";
   }
   useEffect(() => {
-    const storage = getStorage();
-    const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
+    if (rolUsuario === "Fiscal") {
+      const storage = getStorage();
+      const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
 
-    let fileUrl;
+      let fileUrl;
 
-    getDownloadURL(storageRef).then((url) => {
-      fileUrl = url;
-      fetchAsBlob(url).then((blob) => {
-        convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
-          // El usuario tiene una firma almacenada
-          setRevisorFiscalSignature(doubleBase64EncodedFile);
-          setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
-          actualizarFirmaFiscal(doubleBase64EncodedFile);
+      getDownloadURL(storageRef).then((url) => {
+        fileUrl = url;
+        fetchAsBlob(url).then((blob) => {
+          convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
+            // El usuario tiene una firma almacenada
+            setRevisorFiscalSignature(doubleBase64EncodedFile);
+            setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
+            actualizarFirmaFiscal(doubleBase64EncodedFile);
+          });
         });
       });
-    });
 
-    const fetchAsBlob = (url) => fetch(url).then((response) => response.blob());
+      const fetchAsBlob = (url) =>
+        fetch(url).then((response) => response.blob());
 
-    const convertBlobToBase64 = (blob) =>
-      new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = reject;
-        reader.onload = () => {
-          resolve(reader.result);
-        };
-        reader.readAsDataURL(blob);
-      });
+      const convertBlobToBase64 = (blob) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(blob);
+        });
+    }
   }, []);
 
   const eliminarFirma = () => {
@@ -148,8 +150,7 @@ function PdfGenerator({
 
       return firmaBase64;
     } catch (error) {
-      console.error("Error al obtener la firma:", error);
-      //throw error;
+      console.log("Error al obtener la firma:", error);
     }
   };
 
@@ -605,9 +606,7 @@ function PdfGenerator({
           });
         } else {
           content.push({
-            text: htmlToPdfmake(
-              "<br></br><br></br>"
-            ),
+            text: htmlToPdfmake("<br></br><br></br>"),
           });
         }
       } else if (tipoDocumento == "constancia") {
@@ -620,15 +619,12 @@ function PdfGenerator({
             fit: [70, 50],
             alignment: "left",
           });
-        }
-        else {
+        } else {
           content.push({
-            text: htmlToPdfmake(
-              "<br></br><br></br>"
-            ),
+            text: htmlToPdfmake("<br></br><br></br>"),
           });
         }
-      } 
+      }
 
       if (documento.representanteLegal && documento.revisorFiscal) {
         content.push({
@@ -929,21 +925,33 @@ function PdfGenerator({
 
   return (
     <div>
-      {cargandoDocumento ? (
+      {cargandoDocumento && (
         <div
           style={{
-            fontSize: "20px",
-            fontWeight: "bold",
-            marginTop: "60px",
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.7)",
             display: "flex",
+            justifyContent: "center",
             alignItems: "center",
+            zIndex: "9999",
           }}
         >
-          <FaSpinner className="animate-spin" size={30} />
-          Cargando el documento PDF
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <FaSpinner className="animate-spin" size={30} />
+            Cargando el documento PDF
+          </div>
         </div>
-      ) : (
-        <p></p>
       )}
       {tipoDocumento == "certificado" ? (
         rolUsuario === "Fiscal" && revisorFiscalSignature ? (
