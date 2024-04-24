@@ -1,8 +1,11 @@
+import { useRef } from 'react';
 import { useMemo } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
-} from "material-react-table";
+} from 'material-react-table';
+
+
 
 
 
@@ -46,52 +49,64 @@ export function DonationInformation({ documentos, tipoDocumento }) {
       {
         accessorKey: "Fecha Expedición",
         header: "Fecha",
-        size: 180,
         enableColumnFilter: true,
         enableGlobalFilter: false,
+        grow: false
       },
       {
         accessorKey: "Consecutivo",
         header: "No. de documento",
-        size: 150,
         enableColumnFilter: true,
+        grow: false
       },
       {
         accessorKey: "Empresa",
         header: "Empresa",
-        size: 250,
         enableColumnFilter: true,
         enableGlobalFilter: false,
+        grow: false
       },
       {
         accessorKey: "Tipo_Certificado",
         header: "Concepto",
-        size: 100,
         enableColumnFilter: false,
         enableGlobalFilter: false,
+        grow: false
       },
       {
         accessorKey: "accion",
         header: "Acción",
-        size: 50,
         enableColumnFilter: false,
         enableGlobalFilter: false,
+        grow: false
       },
       {
         accessorKey: "Observaciones",
         header: "Observaciones",
-        size: 150,
         enableColumnFilter: false,
         enableGlobalFilter: false,
+        grow: false,
+  
+      },
+      {
+        accessorKey: "Factura",
+        header: "N. de Factura",
+        enableColumnFilter: true,
+        enableGlobalFilter: false,
+        grow: false,
       },
     ],
     []
   );
+  const columnVirtualizerInstanceRef = useRef(null);
 
   const table = useMaterialReactTable({
     columns,
     data: documentos,
-    muiTableContainerProps : { sx : { maxHeight : '600px' } },
+    columnVirtualizerInstanceRef,
+    columnVirtualizerOptions: { overscan: 4 },
+    defaultColumn : { minSize: 40, maxSize: 1000, size: 200 },
+    muiTableContainerProps : { sx : { maxHeight : '600px', maxWidth :'1000px' } },
     muiTableBodyProps: {
       sx: {
         '& tr:nth-of-type(odd) > td': {
@@ -99,14 +114,16 @@ export function DonationInformation({ documentos, tipoDocumento }) {
         },
       },
     },
-    initialState: { pagination: { pageSize: 100, pageIndex: 0 }},
+    initialState: { pagination: { pageSize: 100, pageIndex: 0 },columnVisibility: { Factura: false } },
     enableStickyHeader: true,
     enableStickyFooter: true,
+    layoutMode: 'grid-no-grow',
+    enableColumnVirtualization: true,
   });
 
   return (
     <div>
-      <MaterialReactTable table={table} />
+      <MaterialReactTable table={table} className="header-cell"/>
     </div>
   );
 }

@@ -405,14 +405,6 @@ function PdfGenerator({
 
       let content = [];
 
-      // content.push({
-      //   image: AbacoLogobase64,
-      //   width: 150,
-      //   height: 54.5,
-      //   alignment: "center",
-      //   margin: [0, -40, 0, 20],
-      // });
-
       documento.titulos.forEach((titulo) => {
         content.push({
           text: htmlToPdfmake(titulo + "<br><br>"),
@@ -710,7 +702,7 @@ function PdfGenerator({
         content,
         styles: {
           titulo: {
-            fontSize: 16,
+            fontSize: 12,
             bold: true,
             alignment: "center",
           },
