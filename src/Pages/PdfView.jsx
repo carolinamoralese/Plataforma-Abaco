@@ -25,11 +25,16 @@ import { useParams } from "react-router";
 import PopUp from "../Components/PopUp";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import Swal from "sweetalert2";
+import InformationPopup from "../Components/InformationPopUp";
 
 export function PdfView() {
   const navigate = useNavigate();
   const [pdfData, setPdfData] = useState(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [
+    mostrarMensajeActualizandoDocumento,
+    setMostrarMensajeActualizandoDocumento,
+  ] = useState(false);
   const params = useParams();
   const rolUsuario = localStorage.getItem("usuarioRol");
   const [mostrarBotones, setMostrarBotones] = useState(false);
@@ -171,6 +176,7 @@ export function PdfView() {
   };
 
   async function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
+    setMostrarMensajeActualizandoDocumento(true);
     if (nuevoEstado === rechazar) {
       Swal.fire({
         title: "Motivo de rechazo",
@@ -201,6 +207,7 @@ export function PdfView() {
       }).then((result) => {
         if (result.isConfirmed) {
           const motivoRechazo = result.value;
+          
 
           if (typeof params.certificados_consecutivo !== "undefined") {
             if (rolDelUsuario == "Logistica") {
@@ -233,7 +240,7 @@ export function PdfView() {
               motivoRechazo
             );
           }
-
+          setMostrarMensajeActualizandoDocumento(false)
           setIsPopupOpen(true);
         }
       });
@@ -278,6 +285,7 @@ export function PdfView() {
               );
             }
           }
+          setMostrarMensajeActualizandoDocumento(false)
           setIsPopupOpen(true);
         }
       });
@@ -318,13 +326,14 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Logistica") {
-          modificarEstadoConstanciaLogistica(
+          await modificarEstadoConstanciaLogistica(
             nuevoEstado,
             params.constancias_consecutivo,
             userEmail
           );
         }
       }
+      setMostrarMensajeActualizandoDocumento(false)
       setIsPopupOpen(true);
     }
   }
@@ -468,6 +477,13 @@ export function PdfView() {
             onClose={() => setIsPopupOpen(false)}
             message="¡Se ha gestionado el documento!"
             url={urlToRedirect}
+          />
+        )}
+
+        {mostrarMensajeActualizandoDocumento && (
+          <InformationPopup
+            isOpen={mostrarMensajeActualizandoDocumento}
+            message="Actualizando documento ..."
           />
         )}
       </div>
