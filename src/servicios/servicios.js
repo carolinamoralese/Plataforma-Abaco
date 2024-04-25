@@ -102,7 +102,7 @@ export const modificarEstadoCertificadoAdministrador = (nuevoEstado, consecutivo
     })
 }
 
-export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const modificarEstadoConstanciaLogistica = async (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -115,7 +115,7 @@ export const modificarEstadoConstanciaLogistica = (nuevoEstado, consecutivo, cor
         dataToAdd3: motivoRechazo,
 
     })
-    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_LOGISTICA+"?"+parametros, opciones)
+    return await fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_LOGISTICA+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
 
