@@ -293,26 +293,26 @@ export function PdfView() {
       // esta condicion es para aceptar los documentos
       if (typeof params.certificados_consecutivo !== "undefined") {
         if (rolDelUsuario == "Logistica") {
-          modificarEstadoCertificadoLogistica(
+         await modificarEstadoCertificadoLogistica(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
           );
         } else if (rolDelUsuario == "Contabilidad") {
-          modificarEstadoCertificadoContabilidad(
+          await modificarEstadoCertificadoContabilidad(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
           );
         } else if (rolDelUsuario == "Fiscal") {
           await cargarFirmaFiscal(firmaFiscalDocumento);
-          modificarEstadoCertificadoRevisorFiscal(
+          await modificarEstadoCertificadoRevisorFiscal(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
           );
         } else if (rolDelUsuario == "Administracion") {
-          modificarEstadoCertificadoAdministrador(
+          await modificarEstadoCertificadoAdministrador(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
@@ -320,7 +320,7 @@ export function PdfView() {
         }
       } else if (typeof params.constancias_consecutivo !== "undefined") {
         if (rolDelUsuario == "Administracion") {
-          modificarEstadoConstanciaAdministrador(
+          await modificarEstadoConstanciaAdministrador(
             nuevoEstado,
             params.constancias_consecutivo,
             userEmail
