@@ -22,7 +22,7 @@ export const obtenerConstancias = () => {
     })
 }
 
-export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const modificarEstadoCertificadoLogistica = async (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -35,14 +35,14 @@ export const modificarEstadoCertificadoLogistica = (nuevoEstado, consecutivo, co
         dataToAdd3: motivoRechazo,
     })
 
-    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_LOGISTICA+"?"+parametros, opciones)
+    return await fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_LOGISTICA+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
         throw error.mensaje;
     })
 }
 
-export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const modificarEstadoCertificadoContabilidad = async (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -55,14 +55,14 @@ export const modificarEstadoCertificadoContabilidad = (nuevoEstado, consecutivo,
         dataToAdd3: motivoRechazo,
 
     })
-    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_CONTABILIDAD+"?"+parametros, opciones)
+    return await fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_CONTABILIDAD+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
         throw error.mensaje;
     })
 }
 
-export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const modificarEstadoCertificadoRevisorFiscal  = async (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -75,14 +75,14 @@ export const modificarEstadoCertificadoRevisorFiscal = (nuevoEstado, consecutivo
         dataToAdd3: motivoRechazo,
 
     })
-    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_REVISOR_FISCAL+"?"+parametros, opciones)
+    return await fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_REVISOR_FISCAL+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
         throw error.mensaje;
     })
 }
 
-export const modificarEstadoCertificadoAdministrador = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const modificarEstadoCertificadoAdministrador = async (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -95,7 +95,7 @@ export const modificarEstadoCertificadoAdministrador = (nuevoEstado, consecutivo
         dataToAdd3: motivoRechazo,
 
     })
-    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_ADMINISTRADOR+"?"+parametros, opciones)
+    return await fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CERTIFICADOS_ADMINISTRADOR+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
         throw error.mensaje;
@@ -123,7 +123,7 @@ export const modificarEstadoConstanciaLogistica = async (nuevoEstado, consecutiv
     })
 }
 
-export const modificarEstadoConstanciaAdministrador = (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
+export const modificarEstadoConstanciaAdministrador = async (nuevoEstado, consecutivo, correo, motivoRechazo="") => {
     let opciones = {
         method: "POST",
         
@@ -136,7 +136,7 @@ export const modificarEstadoConstanciaAdministrador = (nuevoEstado, consecutivo,
         dataToAdd3: motivoRechazo,
 
     })
-    return fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_ADMINISTRADOR+"?"+parametros, opciones)
+    return await fetch(VARIABLES_ENTORNO.REACT_APP_URL_MODIFICAR_ESTADOS_CONSTANCIAS_ADMINISTRADOR+"?"+parametros, opciones)
     .then((respuesta) => respuesta)
     .catch((error) => {
         throw error.mensaje;
