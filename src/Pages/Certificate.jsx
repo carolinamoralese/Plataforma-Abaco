@@ -219,7 +219,7 @@ export function Certificate() {
   return (
     <main>
       <Barrasuperior />
-      <Navbar/>
+      <Navbar />
       <div className="flex justify-end mr-10 mt-4 relative">
         <div className="mb-8 mr-10">
           <FaSyncAlt onClick={handleRefreshClick} size={30} />{" "}

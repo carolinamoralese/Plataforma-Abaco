@@ -26,7 +26,7 @@ const SignatureUploadForm = ({ onSignatureUpload }) => {
 
   return (
     <div>
-    <h3 className="text-xl text-green-900">Por favor cargue la firma</h3>
+      <h3 className="text-xl text-green-900">Por favor cargue la firma</h3>
       <input type="file" accept="image/*" onChange={handleFileChange} />
       {signatureImage && (
         <div>
@@ -41,11 +41,11 @@ const SignatureUploadForm = ({ onSignatureUpload }) => {
         onClick={handleUpload}
         style={{
           backgroundColor: "#088737",
-          color: "white", 
-          padding: "10px", 
+          color: "white",
+          padding: "10px",
           cursor: "pointer",
           margin: "20px",
-          borderRadius: "10px"
+          borderRadius: "10px",
         }}
       >
         Subir Firma

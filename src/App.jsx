@@ -12,39 +12,37 @@ import { auth } from "./firebase.jsx";
 import logoColor2 from "./assets/logocolor2.ico";
 import { Helmet } from "react-helmet";
 import { obtenerUsuarios } from "./servicios/servicios.js";
-import Swal from 'sweetalert2';
-
+import Swal from "sweetalert2";
 
 function AppRoutes() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-
     const authListener = auth.onAuthStateChanged((user) => {
       if (user) {
         obtenerUsuarios()
-        .then((usuarios) => {
-          let usuarioLogueado = usuarios.find(
-            (usuario) => user.email === usuario.Correo
-          );
-          if (usuarioLogueado) {
-            localStorage.setItem(
-              "usuarioRol",
-              usuarioLogueado.DescripcionRol
+          .then((usuarios) => {
+            let usuarioLogueado = usuarios.find(
+              (usuario) => user.email === usuario.Correo
             );
-            localStorage.setItem("userEmail", user.email);
-            localStorage.setItem("userUid", user.uid);
-            setUser(usuarioLogueado);
-          } else {
-            setUser(null);
-            mostrarAlertaCorreoNoRegistrado(user.email);
-          }
-        })
-        .catch((error) => {
-          console.log("error obtener usuarios", error)
-        })
+            if (usuarioLogueado) {
+              localStorage.setItem(
+                "usuarioRol",
+                usuarioLogueado.DescripcionRol
+              );
+              localStorage.setItem("userEmail", user.email);
+              localStorage.setItem("userUid", user.uid);
+              setUser(usuarioLogueado);
+            } else {
+              setUser(null);
+              mostrarAlertaCorreoNoRegistrado(user.email);
+            }
+          })
+          .catch((error) => {
+            console.log("error obtener usuarios", error);
+          });
       } else {
-      setUser(null)
+        setUser(null);
       }
     });
 
@@ -53,8 +51,8 @@ function AppRoutes() {
 
   const mostrarAlertaCorreoNoRegistrado = (email) => {
     Swal.fire({
-      icon: 'error',
-      title: 'Error de inicio de sesión',
+      icon: "error",
+      title: "Error de inicio de sesión",
       text: `El correo electrónico (${email}) no tiene permiso para este inicio.`,
     });
   };
