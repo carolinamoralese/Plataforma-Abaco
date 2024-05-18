@@ -175,6 +175,10 @@ export function PdfView() {
     setFirmaFiscalDocumento(signatureImage);
   };
 
+  const anularDocumento = async (consecutivo, email, motivoAnulacion) => {
+    await anularCertificado("SI", consecutivo, email, motivoAnulacion);
+  };
+
   async function cambiarEstadoDocumento(nuevoEstado, rolDelUsuario) {
     setMostrarMensajeActualizandoDocumento(true);
     if (nuevoEstado === rechazar) {
@@ -207,7 +211,6 @@ export function PdfView() {
       }).then((result) => {
         if (result.isConfirmed) {
           const motivoRechazo = result.value;
-          
 
           if (typeof params.certificados_consecutivo !== "undefined") {
             if (rolDelUsuario == "Logistica") {
@@ -240,7 +243,7 @@ export function PdfView() {
               motivoRechazo
             );
           }
-          setMostrarMensajeActualizandoDocumento(false)
+          setMostrarMensajeActualizandoDocumento(false);
           setIsPopupOpen(true);
         }
       });
@@ -277,15 +280,16 @@ export function PdfView() {
 
           if (typeof params.certificados_consecutivo !== "undefined") {
             if (rolDelUsuario == "Administracion") {
-              anularCertificado(
-                "SI",
+              setMostrarMensajeActualizandoDocumento(true);
+              setIsPopupOpen(false);
+              anularDocumento(
                 params.certificados_consecutivo,
                 userEmail,
                 motivoAnulacion
               );
             }
           }
-          setMostrarMensajeActualizandoDocumento(false)
+          setMostrarMensajeActualizandoDocumento(false);
           setIsPopupOpen(true);
         }
       });
@@ -293,7 +297,7 @@ export function PdfView() {
       // esta condicion es para aceptar los documentos
       if (typeof params.certificados_consecutivo !== "undefined") {
         if (rolDelUsuario == "Logistica") {
-         await modificarEstadoCertificadoLogistica(
+          await modificarEstadoCertificadoLogistica(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
@@ -333,7 +337,7 @@ export function PdfView() {
           );
         }
       }
-      setMostrarMensajeActualizandoDocumento(false)
+      setMostrarMensajeActualizandoDocumento(false);
       setIsPopupOpen(true);
     }
   }

@@ -43,6 +43,7 @@ function PdfGenerator({
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
   const [revisorFiscalSignature, setRevisorFiscalSignature] = useState(null);
   const [firmaCargada, setFirmaCargada] = useState(false);
+  const [shouldGenerateDocument, setShouldGenerateDocument] = useState(false);
 
   const rolUsuario = localStorage.getItem("usuarioRol");
   const userUid = localStorage.getItem("userUid");
@@ -63,17 +64,19 @@ function PdfGenerator({
 
       let fileUrl;
 
-      getDownloadURL(storageRef).then((url) => {
-        fileUrl = url;
-        fetchAsBlob(url).then((blob) => {
-          convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
-            // El usuario tiene una firma almacenada
-            setRevisorFiscalSignature(doubleBase64EncodedFile);
-            setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
-            actualizarFirmaFiscal(doubleBase64EncodedFile);
+      getDownloadURL(storageRef)
+        .then((url) => {
+          fileUrl = url;
+          fetchAsBlob(url).then((blob) => {
+            convertBlobToBase64(blob).then((doubleBase64EncodedFile) => {
+              // El usuario tiene una firma almacenada
+              setRevisorFiscalSignature(doubleBase64EncodedFile);
+              setFirmaCargada(true); // Actualiza el estado cuando la firma está presente
+              actualizarFirmaFiscal(doubleBase64EncodedFile);
+            });
           });
-        });
-      });
+        })
+        .catch((error) => {});
 
       const fetchAsBlob = (url) =>
         fetch(url).then((response) => response.blob());
@@ -90,6 +93,90 @@ function PdfGenerator({
     }
   }, []);
 
+  const fetchData = async () => {
+    console.log("fetchData");
+    try {
+      if (typeof params.certificados_consecutivo !== "undefined") {
+        let opciones = {
+          method: "POST",
+        };
+        let parametros = new URLSearchParams({
+          authKey: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CERTIFICADOS_INFORMACION,
+        });
+
+        const respuestaDatos = await fetch(
+          VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS_INFORMACION +
+            "?" +
+            parametros,
+          opciones
+        );
+        if (!respuestaDatos.ok) {
+          throw new Error("Error en la solicitud");
+        }
+        const jsonData = await respuestaDatos.json();
+
+        const itemsFactura = await obtenerDetalleFactura();
+        let items;
+
+        items = itemsFactura.filter(
+          (item) => item["Hoja No. "] == params.certificados_consecutivo
+        );
+
+        generatePDF(jsonData, infoDocumento, "certificado", items);
+      } else if (typeof params.constancias_consecutivo !== "undefined") {
+        let opciones = {
+          method: "POST",
+        };
+        let parametros = new URLSearchParams({
+          key: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
+        });
+        const respuestaDatos = await fetch(
+          VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION +
+            "?" +
+            parametros,
+          opciones
+        );
+        if (!respuestaDatos.ok) {
+          throw new Error("Error en la solicitud ");
+        }
+        const jsonData = await respuestaDatos.json();
+
+        generatePDF(jsonData, infoDocumento, "constancia");
+      }
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+    }
+  };
+
+  const fetchAsBlob = async (url) =>
+    fetch(url).then((response) => response.blob());
+
+  const downloadDocumentPDF = async (infoDocumento) => {
+    if (infoDocumento == null) {
+      return;
+    }
+
+    console.log(infoDocumento);
+
+    try {
+      const storage = getStorage();
+      const rutaPdf = `pdfs/${infoDocumento["NIT"]}/${tipoDocumento}s/consecutivo_No_${infoDocumento["Consecutivo"]}.pdf`;
+      const storageRef = ref(storage, rutaPdf);
+
+      let fileUrl = await getDownloadURL(storageRef);
+      console.log(fileUrl);
+
+      await fetchAsBlob(fileUrl).then((blob) => {
+        console.log(blob);
+        onDataGenerated(blob);
+        setCargandoDocumento(false);
+      });
+    } catch (error) {
+      console.log("No existe el documento toca generalo:", error);
+      fetchData();
+    }
+  };
+
   const eliminarFirma = () => {
     const storage = getStorage();
     const storageRef = ref(storage, `firmas/revisor_fiscal/${userEmail}.jpg`);
@@ -98,7 +185,7 @@ function PdfGenerator({
         location.reload();
       })
       .catch((error) => {
-        console.error("Error al eliminar el archivo:", error);
+        console.error("Error al eliminar la firma:", error);
       });
   };
 
@@ -242,7 +329,7 @@ function PdfGenerator({
         }
       })
       .catch(function (error) {
-        console.error("Error al verificar la existencia del archivo:", error);
+        //console.error("Error al verificar la existencia del archivo:", error);
       });
   };
 
@@ -857,62 +944,7 @@ function PdfGenerator({
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (typeof params.certificados_consecutivo !== "undefined") {
-          let opciones = {
-            method: "POST",
-          };
-          let parametros = new URLSearchParams({
-            authKey:
-              VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CERTIFICADOS_INFORMACION,
-          });
-
-          const respuestaDatos = await fetch(
-            VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADOS_INFORMACION +
-              "?" +
-              parametros,
-            opciones
-          );
-          if (!respuestaDatos.ok) {
-            throw new Error("Error en la solicitud");
-          }
-          const jsonData = await respuestaDatos.json();
-
-          const itemsFactura = await obtenerDetalleFactura();
-          let items;
-
-          items = itemsFactura.filter(
-            (item) => item["Hoja No. "] == params.certificados_consecutivo
-          );
-
-          generatePDF(jsonData, infoDocumento, "certificado", items);
-        } else if (typeof params.constancias_consecutivo !== "undefined") {
-          let opciones = {
-            method: "POST",
-          };
-          let parametros = new URLSearchParams({
-            key: VARIABLES_ENTORNO.REACT_APP_AUTHKEY_CONSTANCIAS_INFORMACION,
-          });
-          const respuestaDatos = await fetch(
-            VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIAS_INFORMACION +
-              "?" +
-              parametros,
-            opciones
-          );
-          if (!respuestaDatos.ok) {
-            throw new Error("Error en la solicitud ");
-          }
-          const jsonData = await respuestaDatos.json();
-
-          generatePDF(jsonData, infoDocumento, "constancia");
-        }
-      } catch (error) {
-        console.error("Error al obtener datos:", error);
-      }
-    };
-
-    fetchData(infoDocumento);
+    downloadDocumentPDF(infoDocumento);
   }, [infoDocumento]);
 
   return (
