@@ -278,19 +278,23 @@ export function PdfView() {
         if (result.isConfirmed) {
           const motivoAnulacion = result.value;
 
-          if (typeof params.certificados_consecutivo !== "undefined") {
-            if (rolDelUsuario == "Administracion") {
-              setMostrarMensajeActualizandoDocumento(true);
-              setIsPopupOpen(false);
-              anularDocumento(
-                params.certificados_consecutivo,
-                userEmail,
-                motivoAnulacion
-              );
+          const handleAnulacion = async () => {
+            if (typeof params.certificados_consecutivo !== "undefined") {
+              if (rolDelUsuario == "Administracion") {
+                localStorage.setItem("shouldGeneratePDF", true);
+                setMostrarMensajeActualizandoDocumento(true);
+                setIsPopupOpen(false);
+                await anularDocumento(
+                  params.certificados_consecutivo,
+                  userEmail,
+                  motivoAnulacion
+                );
+              }
             }
-          }
-          setMostrarMensajeActualizandoDocumento(false);
-          setIsPopupOpen(true);
+            setMostrarMensajeActualizandoDocumento(false);
+            setIsPopupOpen(true);
+          };
+          handleAnulacion();
         }
       });
     } else {
@@ -309,6 +313,7 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Fiscal") {
+          localStorage.setItem("shouldGeneratePDF", true);
           await cargarFirmaFiscal(firmaFiscalDocumento);
           await modificarEstadoCertificadoRevisorFiscal(
             nuevoEstado,
@@ -330,6 +335,7 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Logistica") {
+          localStorage.setItem("shouldGeneratePDF", true);
           await modificarEstadoConstanciaLogistica(
             nuevoEstado,
             params.constancias_consecutivo,

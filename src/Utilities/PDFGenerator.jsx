@@ -33,6 +33,7 @@ function PdfGenerator({
   infoDocumento,
   actualizarFirmaFiscal,
 }) {
+
   const params = useParams();
   const navigate = useNavigate();
   const rolUsuariologistica = "R_Logistica";
@@ -43,10 +44,8 @@ function PdfGenerator({
   const [cargandoDocumento, setCargandoDocumento] = useState(true);
   const [revisorFiscalSignature, setRevisorFiscalSignature] = useState(null);
   const [firmaCargada, setFirmaCargada] = useState(false);
-  const [shouldGenerateDocument, setShouldGenerateDocument] = useState(false);
 
   const rolUsuario = localStorage.getItem("usuarioRol");
-  const userUid = localStorage.getItem("userUid");
   let googleClient = null;
   const db = getFirestore();
 
@@ -897,54 +896,64 @@ function PdfGenerator({
           tipoDocumento,
           documento["hoja_No"]
         );
+        localStorage.setItem("shouldGeneratePDF", "false");
         setCargandoDocumento(false);
 
-        if (
-          tipoDocumento == "certificado" &&
-          infoDocumento[rolUsuarioAnular].toUpperCase() === "SI" &&
-          rolUsuario == "Administracion"
-        ) {
-          uploadPDFToDrive(
-            pdfBlob,
-            infoDocumento["NIT"],
-            tipoDocumento,
-            documento["hoja_No"],
-            "Anulados"
-          );
-        } else if (
-          tipoDocumento == "certificado" &&
-          infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
-          infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
-          infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-          infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" &&
-          rolUsuario == "Fiscal"
-        ) {
-          uploadPDFToDrive(
-            pdfBlob,
-            infoDocumento["NIT"],
-            tipoDocumento,
-            documento["hoja_No"],
-            "Firmados"
-          );
-        } else if (
-          tipoDocumento == "constancia" &&
-          infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
-          rolUsuario == "Logistica"
-        ) {
-          uploadPDFToDrive(
-            pdfBlob,
-            infoDocumento["NIT"],
-            tipoDocumento,
-            documento["hoja_No"],
-            "Firmados"
-          );
-        }
+        // if (
+        //   tipoDocumento == "certificado" &&
+        //   infoDocumento[rolUsuarioAnular].toUpperCase() === "SI" &&
+        //   rolUsuario == "Administracion"
+        // ) {
+        //   uploadPDFToDrive(
+        //     pdfBlob,
+        //     infoDocumento["NIT"],
+        //     tipoDocumento,
+        //     documento["hoja_No"],
+        //     "Anulados"
+        //   );
+        // } else if (
+        //   tipoDocumento == "certificado" &&
+        //   infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
+        //   infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
+        //   infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
+        //   infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" &&
+        //   rolUsuario == "Fiscal"
+        // ) {
+        //   uploadPDFToDrive(
+        //     pdfBlob,
+        //     infoDocumento["NIT"],
+        //     tipoDocumento,
+        //     documento["hoja_No"],
+        //     "Firmados"
+        //   );
+        // } else if (
+        //   tipoDocumento == "constancia" &&
+        //   infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
+        //   rolUsuario == "Logistica"
+        // ) {
+        //   uploadPDFToDrive(
+        //     pdfBlob,
+        //     infoDocumento["NIT"],
+        //     tipoDocumento,
+        //     documento["hoja_No"],
+        //     "Firmados"
+        //   );
+        // }
       });
     }
   };
 
   useEffect(() => {
-    downloadDocumentPDF(infoDocumento);
+    const shouldGeneratePDF = localStorage.getItem("shouldGeneratePDF");
+
+    console.log("shouldGeneratePDF:", shouldGeneratePDF);
+
+    if(shouldGeneratePDF.toLowerCase() === "true"){
+      console.log("El documento cambió toca generalo:");
+      fetchData();
+    }else{
+      downloadDocumentPDF(infoDocumento);
+    }
   }, [infoDocumento]);
 
   return (
