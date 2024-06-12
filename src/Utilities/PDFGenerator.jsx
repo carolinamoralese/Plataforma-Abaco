@@ -33,7 +33,6 @@ function PdfGenerator({
   infoDocumento,
   actualizarFirmaFiscal,
 }) {
-
   const params = useParams();
   const navigate = useNavigate();
   const rolUsuariologistica = "R_Logistica";
@@ -93,7 +92,6 @@ function PdfGenerator({
   }, []);
 
   const fetchData = async () => {
-    console.log("fetchData");
     try {
       if (typeof params.certificados_consecutivo !== "undefined") {
         let opciones = {
@@ -155,23 +153,18 @@ function PdfGenerator({
       return;
     }
 
-    console.log(infoDocumento);
-
     try {
       const storage = getStorage();
       const rutaPdf = `pdfs/${infoDocumento["NIT"]}/${tipoDocumento}s/consecutivo_No_${infoDocumento["Consecutivo"]}.pdf`;
       const storageRef = ref(storage, rutaPdf);
 
       let fileUrl = await getDownloadURL(storageRef);
-      console.log(fileUrl);
 
       await fetchAsBlob(fileUrl).then((blob) => {
-        console.log(blob);
         onDataGenerated(blob);
         setCargandoDocumento(false);
       });
     } catch (error) {
-      console.log("No existe el documento toca generalo:", error);
       fetchData();
     }
   };
@@ -946,12 +939,9 @@ function PdfGenerator({
   useEffect(() => {
     const shouldGeneratePDF = localStorage.getItem("shouldGeneratePDF");
 
-    console.log("shouldGeneratePDF:", shouldGeneratePDF);
-
-    if(shouldGeneratePDF.toLowerCase() === "true"){
-      console.log("El documento cambió toca generalo:");
+    if (shouldGeneratePDF.toLowerCase() === "true") {
       fetchData();
-    }else{
+    } else {
       downloadDocumentPDF(infoDocumento);
     }
   }, [infoDocumento]);

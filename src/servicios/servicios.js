@@ -28,6 +28,37 @@ export const obtenerConstancias = () => {
     });
 };
 
+export const obtenerConstancia = (Hoja_No) => {
+  let parametros = new URLSearchParams({
+    key: VARIABLES_ENTORNO.REACT_APP_KEY_OBTENER_CONSTANCIA,
+    Hoja_No,
+  });
+  return fetch(
+    VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CONSTANCIA + "?" + parametros,
+    { method: "POST" }
+  )
+    .then((respuesta) => respuesta.json())
+    .catch((error) => {
+      throw error.mensaje;
+    });
+};
+
+export const obtenerCertificado = (Hoja_No) => {
+  let parametros = new URLSearchParams({
+    key: VARIABLES_ENTORNO.REACT_APP_KEY_OBTENER_CERTIFICADO,
+    Hoja_No,
+  });
+  return fetch(
+    VARIABLES_ENTORNO.REACT_APP_URL_OBTENER_CERTIFICADO + "?" + parametros,
+    { method: "POST" }
+  )
+    .then((respuesta) => respuesta.json())
+
+    .catch((error) => {
+      throw error.mensaje;
+    });
+};
+
 export const modificarEstadoCertificadoLogistica = async (
   nuevoEstado,
   consecutivo,

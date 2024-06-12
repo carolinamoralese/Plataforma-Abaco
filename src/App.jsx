@@ -39,7 +39,7 @@ function AppRoutes() {
             }
           })
           .catch((error) => {
-            console.log("error obtener usuarios", error);
+            //("error obtener usuarios", error);
           });
       } else {
         setUser(null);

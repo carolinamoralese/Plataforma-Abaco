@@ -10,17 +10,17 @@ import {
 import PdfGenerator from "../Utilities/PDFGenerator";
 import Group from "../assets/Group.png";
 import { CreateButton } from "../Components/Button/Button";
-import { modificarEstadoCertificadoLogistica } from "../servicios/servicios";
+import {
+  modificarEstadoCertificadoLogistica,
+  obtenerCertificado,
+  obtenerConstancia,
+} from "../servicios/servicios";
 import { modificarEstadoCertificadoContabilidad } from "../servicios/servicios";
 import { modificarEstadoCertificadoRevisorFiscal } from "../servicios/servicios";
 import { modificarEstadoConstanciaLogistica } from "../servicios/servicios";
 import { modificarEstadoCertificadoAdministrador } from "../servicios/servicios";
 import { modificarEstadoConstanciaAdministrador } from "../servicios/servicios";
 import { anularCertificado } from "../servicios/servicios";
-import {
-  obtenerCertificados,
-  obtenerConstancias,
-} from "../servicios/servicios";
 import { useParams } from "react-router";
 import PopUp from "../Components/PopUp";
 import { FaFileInvoiceDollar } from "react-icons/fa";
@@ -67,10 +67,12 @@ export function PdfView() {
     const fetchData = async () => {
       try {
         if (typeof params.certificados_consecutivo !== "undefined") {
-          const documentos = await obtenerCertificados();
-          const documento = await documentos.find(
-            (doc) => doc["Hoja_No"] == params.certificados_consecutivo
+          const documento = await obtenerCertificado(
+            params.certificados_consecutivo
           );
+          // const documento = await documentos.find(
+          //   (doc) => doc["Hoja_No"] == params.certificados_consecutivo
+          // );
 
           setInfoDocumento(documento);
           setUrlToRedirect(
@@ -118,10 +120,12 @@ export function PdfView() {
             //setMostrarBotones(true);
           }
         } else if (typeof params.constancias_consecutivo !== "undefined") {
-          const documentos = await obtenerConstancias();
-          const documento = documentos.find(
-            (doc) => doc["Hoja_No"] == params.constancias_consecutivo
+          const documento = await obtenerConstancia(
+            params.constancias_consecutivo
           );
+          // const documento = documentos.find(
+          //   (doc) => doc["Hoja_No"] == params.constancias_consecutivo
+          // );
           setInfoDocumento(documento);
           setUrlToRedirect(
             `/pdf-view/constancias/${params.constancias_consecutivo}`

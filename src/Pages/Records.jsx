@@ -205,16 +205,15 @@ export function Records() {
         className="relative mt-5 flex flex-col items-center ml-40"
       >
         <div className="flex justify-center">
-       
-            <div className="mr-4">
-              <CreateButton
-                colorClass="bg-naranja h-20"
-                selected={selectedOption === "Pendientes"}
-                onClick={() => handleButtonClick("Pendientes")}
-                text={nombreBotonPendientes}
-              ></CreateButton>
-            </div>
-         
+          <div className="mr-4">
+            <CreateButton
+              colorClass="bg-naranja h-20"
+              selected={selectedOption === "Pendientes"}
+              onClick={() => handleButtonClick("Pendientes")}
+              text={nombreBotonPendientes}
+            ></CreateButton>
+          </div>
+
           <div className="mr-4">
             <CreateButton
               colorClass="bg-amarillo h-20"
