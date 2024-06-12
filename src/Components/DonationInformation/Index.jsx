@@ -1,13 +1,9 @@
-import { useRef } from 'react';
+import { useRef } from "react";
 import { useMemo } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
-} from 'material-react-table';
-
-
-
-
+} from "material-react-table";
 
 export function DonationInformation({ documentos, tipoDocumento }) {
   documentos.map((documento) => {
@@ -43,7 +39,6 @@ export function DonationInformation({ documentos, tipoDocumento }) {
     return documento;
   });
 
-
   const columns = useMemo(
     () => [
       {
@@ -51,34 +46,34 @@ export function DonationInformation({ documentos, tipoDocumento }) {
         header: "Fecha",
         enableColumnFilter: true,
         enableGlobalFilter: false,
-        grow: false
+        grow: false,
       },
       {
         accessorKey: "Consecutivo",
         header: "No. de documento",
         enableColumnFilter: true,
-        grow: false
+        grow: false,
       },
       {
         accessorKey: "Empresa",
         header: "Empresa",
         enableColumnFilter: true,
         enableGlobalFilter: false,
-        grow: false
+        grow: false,
       },
       {
         accessorKey: "Tipo_Certificado",
         header: "Concepto",
         enableColumnFilter: false,
         enableGlobalFilter: false,
-        grow: false
+        grow: false,
       },
       {
         accessorKey: "accion",
         header: "Acción",
         enableColumnFilter: false,
         enableGlobalFilter: false,
-        grow: false
+        grow: false,
       },
       {
         accessorKey: "Observaciones",
@@ -86,7 +81,6 @@ export function DonationInformation({ documentos, tipoDocumento }) {
         enableColumnFilter: false,
         enableGlobalFilter: false,
         grow: false,
-  
       },
       {
         accessorKey: "Factura",
@@ -105,25 +99,28 @@ export function DonationInformation({ documentos, tipoDocumento }) {
     data: documentos,
     columnVirtualizerInstanceRef,
     columnVirtualizerOptions: { overscan: 4 },
-    defaultColumn : { minSize: 40, maxSize: 1000, size: 200 },
-    muiTableContainerProps : { sx : { maxHeight : '600px', maxWidth :'1000px' } },
+    defaultColumn: { minSize: 40, maxSize: 1000, size: 200 },
+    muiTableContainerProps: { sx: { maxHeight: "600px", maxWidth: "1000px" } },
     muiTableBodyProps: {
       sx: {
-        '& tr:nth-of-type(odd) > td': {
-          backgroundColor: '#f5f5f5',
+        "& tr:nth-of-type(odd) > td": {
+          backgroundColor: "#f5f5f5",
         },
       },
     },
-    initialState: { pagination: { pageSize: 100, pageIndex: 0 },columnVisibility: { Factura: false } },
+    initialState: {
+      pagination: { pageSize: 100, pageIndex: 0 },
+      columnVisibility: { Factura: false },
+    },
     enableStickyHeader: true,
     enableStickyFooter: true,
-    layoutMode: 'grid-no-grow',
+    layoutMode: "grid-no-grow",
     enableColumnVirtualization: true,
   });
 
   return (
     <div>
-      <MaterialReactTable table={table} className="header-cell"/>
+      <MaterialReactTable table={table} className="header-cell" />
     </div>
   );
 }
