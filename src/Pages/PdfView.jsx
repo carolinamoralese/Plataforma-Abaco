@@ -4,6 +4,7 @@ import { Navbar, Barrasuperior } from "../Components/Navbar/index";
 import {
   ref,
   getStorage,
+  uploadBytes,
   uploadString,
   getDownloadURL,
 } from "firebase/storage";
@@ -48,6 +49,7 @@ export function PdfView() {
   const rolUsuarioAnulador = "R_Anulado";
   const rolUsuarioAdministrador = "R_Administrativa";
   const userEmail = localStorage.getItem("userEmail");
+  const [pdfBlob, setPdfBlob] = useState(null);
 
   const showPDF = (pdfBlob) => {
     setPdfData(URL.createObjectURL(pdfBlob));
@@ -154,29 +156,46 @@ export function PdfView() {
     }
   }, []);
 
-  const cargarFirmaFiscal = async (signatureImage) => {
-    const storage = getStorage();
-    if (typeof params.certificados_consecutivo !== "undefined") {
-      const storageRefFirmaDocumento = ref(
-        storage,
-        `firmas/certificados/certificado_${params.certificados_consecutivo}.jpg`
-      );
 
-      uploadString(storageRefFirmaDocumento, signatureImage, "data_url")
-        .then((snapshot) => {
-          return getDownloadURL(snapshot.ref);
-        })
-        .then((downloadURL) => {
-          setFirmaFiscalDocumento(downloadURL);
-        })
-        .catch((error) => {
-          console.error("Error al cargar la firma fiscal:", error);
-        });
+  // FUNCION PARA GUARDAR EN FIRESTORAGE
+
+  const uploadPDFToFirebaseStorage = async (
+    pdfBlob,
+    nit,
+    tipoDocumento,
+    consecutivo,
+    rol,
+  ) => {
+    try {
+
+      const fechaActual = new Date();
+
+      const año = fechaActual.getFullYear();
+      let mes = fechaActual.getMonth() + 1;
+      let día = fechaActual.getDate();
+
+      mes = mes < 10 ? '0' + mes : mes;
+      día = día < 10 ? '0' + día : día;
+
+      const formatoAAAAMMDD = `${año}${mes}${día}`;
+
+      const storage = getStorage();
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}_${formatoAAAAMMDD}_${rol}.pdf`;
+      const storageRef = ref(storage, rutaArchivo);
+      await uploadBytes(storageRef, pdfBlob);
+    } catch (error) {
+      console.info("Error al subir el PDF histórico a Firebase Storage:", error);
     }
   };
 
+
   const actualizarFirmaFiscal = (signatureImage) => {
     setFirmaFiscalDocumento(signatureImage);
+  };
+
+  const actualizarPdfBlob = (pdfBlob) => {
+    setPdfBlob(pdfBlob);
   };
 
   const anularDocumento = async (consecutivo, email, motivoAnulacion) => {
@@ -285,7 +304,7 @@ export function PdfView() {
           const handleAnulacion = async () => {
             if (typeof params.certificados_consecutivo !== "undefined") {
               if (rolDelUsuario == "Administracion") {
-                localStorage.setItem("shouldGeneratePDF", true);
+                localStorage.setItem("shouldGeneratePDF", "true");
                 setMostrarMensajeActualizandoDocumento(true);
                 setIsPopupOpen(false);
                 await anularDocumento(
@@ -317,8 +336,8 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Fiscal") {
-          localStorage.setItem("shouldGeneratePDF", true);
-          await cargarFirmaFiscal(firmaFiscalDocumento);
+          localStorage.setItem("shouldGeneratePDF", "true");
+          //await cargarFirmaFiscal(firmaFiscalDocumento);
           await modificarEstadoCertificadoRevisorFiscal(
             nuevoEstado,
             params.certificados_consecutivo,
@@ -331,6 +350,9 @@ export function PdfView() {
             userEmail
           );
         }
+
+        await uploadPDFToFirebaseStorage(pdfBlob, infoDocumento["NIT"], tipoDocumento, infoDocumento["Consecutivo"], rolDelUsuario);
+
       } else if (typeof params.constancias_consecutivo !== "undefined") {
         if (rolDelUsuario == "Administracion") {
           await modificarEstadoConstanciaAdministrador(
@@ -339,13 +361,16 @@ export function PdfView() {
             userEmail
           );
         } else if (rolDelUsuario == "Logistica") {
-          localStorage.setItem("shouldGeneratePDF", true);
+          localStorage.setItem("shouldGeneratePDF", "true");
           await modificarEstadoConstanciaLogistica(
             nuevoEstado,
             params.constancias_consecutivo,
             userEmail
           );
         }
+
+        await uploadPDFToFirebaseStorage(pdfBlob, infoDocumento["NIT"], tipoDocumento, infoDocumento["Consecutivo"], rolDelUsuario);
+
       }
       setMostrarMensajeActualizandoDocumento(false);
       setIsPopupOpen(true);
@@ -424,6 +449,7 @@ export function PdfView() {
             onDataGenerated={showPDF}
             infoDocumento={infoDocumento}
             actualizarFirmaFiscal={actualizarFirmaFiscal}
+            actualizarPdfBlob={actualizarPdfBlob}
           />{" "}
           {/* Generar PDF */}
         </div>

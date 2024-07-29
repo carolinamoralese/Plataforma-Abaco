@@ -32,6 +32,7 @@ function PdfGenerator({
   onDataGenerated,
   infoDocumento,
   actualizarFirmaFiscal,
+  actualizarPdfBlob,
 }) {
   const params = useParams();
   const navigate = useNavigate();
@@ -162,6 +163,7 @@ function PdfGenerator({
 
       await fetchAsBlob(fileUrl).then((blob) => {
         onDataGenerated(blob);
+        actualizarPdfBlob(blob);
         setCargandoDocumento(false);
       });
     } catch (error) {
@@ -199,37 +201,6 @@ function PdfGenerator({
       location.reload();
     } catch (error) {
       console.error("Error al cargar la firma:", error);
-    }
-  };
-
-  const obtenerFirmaCertificado = async (consecutivo) => {
-    try {
-      const fetchAsBlob = (url) =>
-        fetch(url).then((response) => response.blob());
-
-      const convertBlobToBase64 = (blob) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = reject;
-          reader.onload = () => {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(blob);
-        });
-
-      const storage = getStorage();
-      const storageRef = ref(
-        storage,
-        `firmas/certificados/certificado_${consecutivo}.jpg`
-      );
-
-      const url = await getDownloadURL(storageRef);
-      const blob = await fetchAsBlob(url);
-      const firmaBase64 = await convertBlobToBase64(blob);
-
-      return firmaBase64;
-    } catch (error) {
-      console.log("Error al obtener la firma:", error);
     }
   };
 
@@ -349,7 +320,7 @@ function PdfGenerator({
         });
       });
     } catch (error) {
-      console.error("Error al cargar la API de Google Drive:", error);
+      console.info("Error al cargar la API de Google Drive:", error);
       throw error;
     }
   }
@@ -449,8 +420,42 @@ function PdfGenerator({
       const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
+      actualizarPdfBlob(pdfBlob);
     } catch (error) {
       console.error("Error al subir el PDF a Firebase Storage:", error);
+    }
+  };
+
+
+  // FUNCION PARA GUARDAR EN FIRESTORAGE
+
+  const uploadHistoricPDFToFirebaseStorage = async (
+    pdfBlob,
+    nit,
+    tipoDocumento,
+    consecutivo,
+    rol,
+  ) => {
+    try {
+
+      const fechaActual = new Date();
+
+      const año = fechaActual.getFullYear();
+      let mes = fechaActual.getMonth() + 1;
+      let día = fechaActual.getDate();
+
+      mes = mes < 10 ? '0' + mes : mes;
+      día = día < 10 ? '0' + día : día;
+
+      const formatoAAAAMMDD = `${año}${mes}${día}`;
+
+      const storage = getStorage();
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}_${formatoAAAAMMDD}_${rol}.pdf`;
+      const storageRef = ref(storage, rutaArchivo);
+      await uploadBytes(storageRef, pdfBlob);
+    } catch (error) {
+      console.info("Error al subir el PDF histórico a Firebase Storage:", error);
     }
   };
 
@@ -644,13 +649,10 @@ function PdfGenerator({
           infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
         ) {
           let designFirmaRevisorFiscal;
-          let firmaDocumento;
 
-          firmaDocumento = await obtenerFirmaCertificado(documento["hoja_No"]);
-
-          if (firmaDocumento) {
+          if (revisorFiscalSignature) {
             designFirmaRevisorFiscal = {
-              image: firmaDocumento,
+              image: revisorFiscalSignature,
               fit: [70, 50],
             };
           } else {
@@ -889,6 +891,7 @@ function PdfGenerator({
           tipoDocumento,
           documento["hoja_No"]
         );
+        uploadHistoricPDFToFirebaseStorage(pdfBlob, infoDocumento["NIT"], tipoDocumento, infoDocumento["Consecutivo"], rolUsuario);
         localStorage.setItem("shouldGeneratePDF", "false");
         setCargandoDocumento(false);
 
@@ -935,11 +938,11 @@ function PdfGenerator({
       });
     }
   };
-
+/////// mirar por aca
   useEffect(() => {
     const shouldGeneratePDF = localStorage.getItem("shouldGeneratePDF");
 
-    if (shouldGeneratePDF.toLowerCase() === "true") {
+    if (shouldGeneratePDF === "true") {
       fetchData();
     } else {
       downloadDocumentPDF(infoDocumento);
@@ -1000,6 +1003,7 @@ PdfGenerator.propTypes = {
   onDataGenerated: PropTypes.func,
   infoDocumento: PropTypes.object,
   actualizarFirmaFiscal: PropTypes.func.isRequired,
+  actualizarPdfBlob: PropTypes.func.isRequired,
 };
 
 export default PdfGenerator;
