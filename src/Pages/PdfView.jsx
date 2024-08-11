@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar, Barrasuperior } from "../Components/Navbar/index";
-import {
-  ref,
-  getStorage,
-  uploadBytes,
-  uploadString,
-  getDownloadURL,
-} from "firebase/storage";
+import { ref, getStorage, uploadBytes } from "firebase/storage";
 import PdfGenerator from "../Utilities/PDFGenerator";
 import Group from "../assets/Group.png";
 import { CreateButton } from "../Components/Button/Button";
@@ -41,6 +35,7 @@ export function PdfView() {
   const [mostrarBotones, setMostrarBotones] = useState(false);
   const [infoDocumento, setInfoDocumento] = useState(null);
   const [mostrarBotonAnular, setMostrarBotonAnular] = useState(false);
+  const [mostrarBotonReiniar, setMostrarBotonReiniar] = useState(true);
   const [urlToRedirect, setUrlToRedirect] = useState("/home");
   const [firmaFiscalDocumento, setFirmaFiscalDocumento] = useState(null);
   const rolUsuariologistica = "R_Logistica";
@@ -111,6 +106,7 @@ export function PdfView() {
             documento[rolUsuarioAnulador].toUpperCase() === "SI"
           ) {
             setMostrarBotones(false);
+            setMostrarBotonReiniar(false);
           } else if (
             rolUsuario == "Administracion" &&
             documento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
@@ -119,15 +115,12 @@ export function PdfView() {
             documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
           ) {
             setMostrarBotonAnular(true);
-            //setMostrarBotones(true);
           }
         } else if (typeof params.constancias_consecutivo !== "undefined") {
           const documento = await obtenerConstancia(
             params.constancias_consecutivo
           );
-          // const documento = documentos.find(
-          //   (doc) => doc["Hoja_No"] == params.constancias_consecutivo
-          // );
+
           setInfoDocumento(documento);
           setUrlToRedirect(
             `/pdf-view/constancias/${params.constancias_consecutivo}`
@@ -156,39 +149,74 @@ export function PdfView() {
     }
   }, []);
 
-
   // FUNCION PARA GUARDAR EN FIRESTORAGE
-
   const uploadPDFToFirebaseStorage = async (
     pdfBlob,
     nit,
     tipoDocumento,
     consecutivo,
-    rol,
+    rol
   ) => {
     try {
-
       const fechaActual = new Date();
 
-      const año = fechaActual.getFullYear();
+      let año = fechaActual.getFullYear();
       let mes = fechaActual.getMonth() + 1;
       let día = fechaActual.getDate();
 
-      mes = mes < 10 ? '0' + mes : mes;
-      día = día < 10 ? '0' + día : día;
+      let horaUTC = fechaActual.getUTCHours();
+      let minutosUTC = fechaActual.getUTCMinutes();
 
-      const formatoAAAAMMDD = `${año}${mes}${día}`;
+      const desfaseHorario = 5;
+      horaUTC -= desfaseHorario;
+
+      if (horaUTC < 0) {
+        horaUTC += 24;
+        día -= 1;
+        if (día < 1) {
+          mes -= 1;
+          if (mes < 1) {
+            mes = 12;
+            año -= 1;
+            día = new Date(año, mes, 0).getDate();
+          } else {
+            día = new Date(año, mes, 0).getDate();
+          }
+        }
+      }
+
+
+      let periodo = "AM";
+      if (horaUTC >= 12) {
+        periodo = "PM";
+        if (horaUTC > 12) {
+          horaUTC -= 12;
+        }
+      }
+      if (horaUTC === 0) {
+        horaUTC = 12; 
+
+      mes = mes < 10 ? "0" + mes : mes;
+      día = día < 10 ? "0" + día : día;
+      horaUTC = horaUTC < 10 ? "0" + horaUTC : horaUTC;
+      minutosUTC = minutosUTC < 10 ? "0" + minutosUTC : minutosUTC;
+
+      const formatoAAAAMMDDHHmm = `${año}${mes}${día}_${horaUTC}:${minutosUTC}_${periodo}`;
 
       const storage = getStorage();
 
-      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}_${formatoAAAAMMDD}_${rol}.pdf`;
+      nit = String(nit).replace(/[^a-zA-Z0-9]/g, "");
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}/${consecutivo}_${formatoAAAAMMDDHHmm}_${rol}.pdf`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
     } catch (error) {
-      console.info("Error al subir el PDF histórico a Firebase Storage:", error);
+      console.info(
+        "Error al subir el PDF histórico a Firebase Storage:",
+        error
+      );
     }
   };
-
 
   const actualizarFirmaFiscal = (signatureImage) => {
     setFirmaFiscalDocumento(signatureImage);
@@ -235,39 +263,42 @@ export function PdfView() {
         if (result.isConfirmed) {
           const motivoRechazo = result.value;
 
-          if (typeof params.certificados_consecutivo !== "undefined") {
-            if (rolDelUsuario == "Logistica") {
-              modificarEstadoCertificadoLogistica(
+          const handleRechazo = async () => {
+            if (typeof params.certificados_consecutivo !== "undefined") {
+              if (rolDelUsuario == "Logistica") {
+                await modificarEstadoCertificadoLogistica(
+                  nuevoEstado,
+                  params.certificados_consecutivo,
+                  userEmail,
+                  motivoRechazo
+                );
+              } else if (rolDelUsuario == "Contabilidad") {
+                await modificarEstadoCertificadoContabilidad(
+                  nuevoEstado,
+                  params.certificados_consecutivo,
+                  userEmail,
+                  motivoRechazo
+                );
+              } else if (rolDelUsuario == "Fiscal") {
+                await modificarEstadoCertificadoRevisorFiscal(
+                  nuevoEstado,
+                  params.certificados_consecutivo,
+                  userEmail,
+                  motivoRechazo
+                );
+              }
+            } else if (typeof params.constancias_consecutivo !== "undefined") {
+              await modificarEstadoConstanciaLogistica(
                 nuevoEstado,
-                params.certificados_consecutivo,
-                userEmail,
-                motivoRechazo
-              );
-            } else if (rolDelUsuario == "Contabilidad") {
-              modificarEstadoCertificadoContabilidad(
-                nuevoEstado,
-                params.certificados_consecutivo,
-                userEmail,
-                motivoRechazo
-              );
-            } else if (rolDelUsuario == "Fiscal") {
-              modificarEstadoCertificadoRevisorFiscal(
-                nuevoEstado,
-                params.certificados_consecutivo,
+                params.constancias_consecutivo,
                 userEmail,
                 motivoRechazo
               );
             }
-          } else if (typeof params.constancias_consecutivo !== "undefined") {
-            modificarEstadoConstanciaLogistica(
-              nuevoEstado,
-              params.constancias_consecutivo,
-              userEmail,
-              motivoRechazo
-            );
-          }
-          setMostrarMensajeActualizandoDocumento(false);
-          setIsPopupOpen(true);
+            setMostrarMensajeActualizandoDocumento(false);
+            setIsPopupOpen(true);
+          };
+          handleRechazo();
         }
       });
     } else if (nuevoEstado === "ANULAR") {
@@ -329,11 +360,25 @@ export function PdfView() {
             params.certificados_consecutivo,
             userEmail
           );
+          await uploadPDFToFirebaseStorage(
+            pdfBlob,
+            infoDocumento["NIT"],
+            tipoDocumento,
+            infoDocumento["Consecutivo"],
+            rolDelUsuario
+          );
         } else if (rolDelUsuario == "Contabilidad") {
           await modificarEstadoCertificadoContabilidad(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
+          );
+          await uploadPDFToFirebaseStorage(
+            pdfBlob,
+            infoDocumento["NIT"],
+            tipoDocumento,
+            infoDocumento["Consecutivo"],
+            rolDelUsuario
           );
         } else if (rolDelUsuario == "Fiscal") {
           localStorage.setItem("shouldGeneratePDF", "true");
@@ -350,9 +395,6 @@ export function PdfView() {
             userEmail
           );
         }
-
-        await uploadPDFToFirebaseStorage(pdfBlob, infoDocumento["NIT"], tipoDocumento, infoDocumento["Consecutivo"], rolDelUsuario);
-
       } else if (typeof params.constancias_consecutivo !== "undefined") {
         if (rolDelUsuario == "Administracion") {
           await modificarEstadoConstanciaAdministrador(
@@ -368,14 +410,64 @@ export function PdfView() {
             userEmail
           );
         }
-
-        await uploadPDFToFirebaseStorage(pdfBlob, infoDocumento["NIT"], tipoDocumento, infoDocumento["Consecutivo"], rolDelUsuario);
-
       }
       setMostrarMensajeActualizandoDocumento(false);
       setIsPopupOpen(true);
     }
   }
+
+  const reiniciarDocumento = async () => {
+    if (rolUsuario !== "Administracion") {
+      console.info(
+        "Solo los usurios administradores pueden reiniciar los documentos."
+      );
+      return;
+    }
+
+    setMostrarMensajeActualizandoDocumento(true);
+    setIsPopupOpen(false);
+
+    if (typeof params.certificados_consecutivo !== "undefined") {
+      await modificarEstadoCertificadoLogistica(
+        "",
+        params.certificados_consecutivo,
+        userEmail
+      );
+
+      await modificarEstadoCertificadoContabilidad(
+        "",
+        params.certificados_consecutivo,
+        userEmail
+      );
+
+      await modificarEstadoCertificadoRevisorFiscal(
+        "",
+        params.certificados_consecutivo,
+        userEmail
+      );
+
+      await modificarEstadoCertificadoAdministrador(
+        "",
+        params.certificados_consecutivo,
+        userEmail
+      );
+    } else if (typeof params.constancias_consecutivo !== "undefined") {
+      await modificarEstadoConstanciaLogistica(
+        "",
+        params.constancias_consecutivo,
+        userEmail
+      );
+      await modificarEstadoConstanciaAdministrador(
+        "",
+        params.constancias_consecutivo,
+        userEmail
+      );
+    }
+    localStorage.setItem("shouldGeneratePDF", "true");
+    setMostrarMensajeActualizandoDocumento(false);
+    setIsPopupOpen(true);
+  };
+
   const homeStyle = {
     backgroundImage: `url(${Group})`,
     backgroundSize: "80% 100%",
@@ -507,6 +599,17 @@ export function PdfView() {
               selected={false}
               onClick={() => cambiarEstadoDocumento("ANULAR", rolUsuario)}
               text="Anular"
+            ></CreateButton>
+          </div>
+        )}
+
+        {mostrarBotonReiniar && rolUsuario == "Administracion" && (
+          <div className="mr-4 mb-4">
+            <CreateButton
+              colorClass="bg-amarillo w-150 h-10"
+              selected={false}
+              onClick={() => reiniciarDocumento()}
+              text="Reiniciar"
             ></CreateButton>
           </div>
         )}

@@ -417,6 +417,8 @@ function PdfGenerator({
     try {
       const storage = getStorage();
 
+      nit = String(nit).replace(/[^a-zA-Z0-9]/g, "");
+
       const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
@@ -424,38 +426,65 @@ function PdfGenerator({
     } catch (error) {
       console.error("Error al subir el PDF a Firebase Storage:", error);
     }
-  };
 
-
-  // FUNCION PARA GUARDAR EN FIRESTORAGE
-
-  const uploadHistoricPDFToFirebaseStorage = async (
-    pdfBlob,
-    nit,
-    tipoDocumento,
-    consecutivo,
-    rol,
-  ) => {
     try {
-
       const fechaActual = new Date();
 
-      const año = fechaActual.getFullYear();
+      let año = fechaActual.getFullYear();
       let mes = fechaActual.getMonth() + 1;
       let día = fechaActual.getDate();
 
-      mes = mes < 10 ? '0' + mes : mes;
-      día = día < 10 ? '0' + día : día;
+      let horaUTC = fechaActual.getUTCHours();
+      let minutosUTC = fechaActual.getUTCMinutes();
 
-      const formatoAAAAMMDD = `${año}${mes}${día}`;
+      const desfaseHorario = 5;
+      horaUTC -= desfaseHorario;
+
+      if (horaUTC < 0) {
+        horaUTC += 24;
+        día -= 1;
+        if (día < 1) {
+          mes -= 1;
+          if (mes < 1) {
+            mes = 12;
+            año -= 1;
+            día = new Date(año, mes, 0).getDate();
+          } else {
+            día = new Date(año, mes, 0).getDate();
+          }
+        }
+      }
+
+      let periodo = "AM";
+      if (horaUTC >= 12) {
+        periodo = "PM";
+        if (horaUTC > 12) {
+          horaUTC -= 12;
+        }
+      }
+      if (horaUTC === 0) {
+        horaUTC = 12;
+      }
+
+      mes = mes < 10 ? "0" + mes : mes;
+      día = día < 10 ? "0" + día : día;
+      horaUTC = horaUTC < 10 ? "0" + horaUTC : horaUTC;
+      minutosUTC = minutosUTC < 10 ? "0" + minutosUTC : minutosUTC;
+
+      const formatoAAAAMMDDHHmm = `${año}${mes}${día}_${horaUTC}:${minutosUTC}_${periodo}`;
+
+      nit = String(nit).replace(/[^a-zA-Z0-9]/g, "");
 
       const storage = getStorage();
 
-      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}_${formatoAAAAMMDD}_${rol}.pdf`;
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}/${consecutivo}_${formatoAAAAMMDDHHmm}_${rolUsuario}.pdf`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
     } catch (error) {
-      console.info("Error al subir el PDF histórico a Firebase Storage:", error);
+      console.info(
+        "Error al subir el PDF histórico a Firebase Storage:",
+        error
+      );
     }
   };
 
@@ -751,9 +780,7 @@ function PdfGenerator({
         });
       }
       content.push({
-        text: htmlToPdfmake(
-          "<br></br><br></br><br></br>Elaboró" + documento.elaborated
-        ),
+        text: htmlToPdfmake("<br></br></br>Elaboró" + documento.elaborated),
         style: "informacionRevisado",
       });
       content.push({
@@ -763,9 +790,7 @@ function PdfGenerator({
 
       if (tipoDocumento !== "constancia") {
         content.push({
-          text: htmlToPdfmake(
-            "Revisó" + documento.revised + "<br></br><br></br>"
-          ),
+          text: htmlToPdfmake("Revisó" + documento.revised + "<br></br>"),
           style: "informacionRevisado",
         });
       }
@@ -840,7 +865,7 @@ function PdfGenerator({
                   documento.address[2],
                 fontSize: 8,
                 alignment: "left",
-                margin: [20, 8, 0, 0],
+                margin: [10, 8, 0, 0],
               },
               {
                 text:
@@ -863,7 +888,7 @@ function PdfGenerator({
             style: "footer",
           };
         },
-        pageMargins: [40, 80, 40, 80],
+        pageMargins: [40, 80, 40, 50],
       };
 
       if (
@@ -891,54 +916,12 @@ function PdfGenerator({
           tipoDocumento,
           documento["hoja_No"]
         );
-        uploadHistoricPDFToFirebaseStorage(pdfBlob, infoDocumento["NIT"], tipoDocumento, infoDocumento["Consecutivo"], rolUsuario);
         localStorage.setItem("shouldGeneratePDF", "false");
         setCargandoDocumento(false);
-
-        // if (
-        //   tipoDocumento == "certificado" &&
-        //   infoDocumento[rolUsuarioAnular].toUpperCase() === "SI" &&
-        //   rolUsuario == "Administracion"
-        // ) {
-        //   uploadPDFToDrive(
-        //     pdfBlob,
-        //     infoDocumento["NIT"],
-        //     tipoDocumento,
-        //     documento["hoja_No"],
-        //     "Anulados"
-        //   );
-        // } else if (
-        //   tipoDocumento == "certificado" &&
-        //   infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
-        //   infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
-        //   infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-        //   infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" &&
-        //   rolUsuario == "Fiscal"
-        // ) {
-        //   uploadPDFToDrive(
-        //     pdfBlob,
-        //     infoDocumento["NIT"],
-        //     tipoDocumento,
-        //     documento["hoja_No"],
-        //     "Firmados"
-        //   );
-        // } else if (
-        //   tipoDocumento == "constancia" &&
-        //   infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
-        //   rolUsuario == "Logistica"
-        // ) {
-        //   uploadPDFToDrive(
-        //     pdfBlob,
-        //     infoDocumento["NIT"],
-        //     tipoDocumento,
-        //     documento["hoja_No"],
-        //     "Firmados"
-        //   );
-        // }
       });
     }
   };
-/////// mirar por aca
+
   useEffect(() => {
     const shouldGeneratePDF = localStorage.getItem("shouldGeneratePDF");
 
