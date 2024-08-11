@@ -32,6 +32,7 @@ function PdfGenerator({
   onDataGenerated,
   infoDocumento,
   actualizarFirmaFiscal,
+  actualizarPdfBlob,
 }) {
   const params = useParams();
   const navigate = useNavigate();
@@ -162,6 +163,7 @@ function PdfGenerator({
 
       await fetchAsBlob(fileUrl).then((blob) => {
         onDataGenerated(blob);
+        actualizarPdfBlob(blob);
         setCargandoDocumento(false);
       });
     } catch (error) {
@@ -199,37 +201,6 @@ function PdfGenerator({
       location.reload();
     } catch (error) {
       console.error("Error al cargar la firma:", error);
-    }
-  };
-
-  const obtenerFirmaCertificado = async (consecutivo) => {
-    try {
-      const fetchAsBlob = (url) =>
-        fetch(url).then((response) => response.blob());
-
-      const convertBlobToBase64 = (blob) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = reject;
-          reader.onload = () => {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(blob);
-        });
-
-      const storage = getStorage();
-      const storageRef = ref(
-        storage,
-        `firmas/certificados/certificado_${consecutivo}.jpg`
-      );
-
-      const url = await getDownloadURL(storageRef);
-      const blob = await fetchAsBlob(url);
-      const firmaBase64 = await convertBlobToBase64(blob);
-
-      return firmaBase64;
-    } catch (error) {
-      console.log("Error al obtener la firma:", error);
     }
   };
 
@@ -349,7 +320,7 @@ function PdfGenerator({
         });
       });
     } catch (error) {
-      console.error("Error al cargar la API de Google Drive:", error);
+      console.info("Error al cargar la API de Google Drive:", error);
       throw error;
     }
   }
@@ -446,11 +417,74 @@ function PdfGenerator({
     try {
       const storage = getStorage();
 
+      nit = String(nit).replace(/[^a-zA-Z0-9]/g, "");
+
       const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/consecutivo_No_${consecutivo}.pdf`;
       const storageRef = ref(storage, rutaArchivo);
       await uploadBytes(storageRef, pdfBlob);
+      actualizarPdfBlob(pdfBlob);
     } catch (error) {
       console.error("Error al subir el PDF a Firebase Storage:", error);
+    }
+
+    try {
+      const fechaActual = new Date();
+
+      let año = fechaActual.getFullYear();
+      let mes = fechaActual.getMonth() + 1;
+      let día = fechaActual.getDate();
+
+      let horaUTC = fechaActual.getUTCHours();
+      let minutosUTC = fechaActual.getUTCMinutes();
+
+      const desfaseHorario = 5;
+      horaUTC -= desfaseHorario;
+
+      if (horaUTC < 0) {
+        horaUTC += 24;
+        día -= 1;
+        if (día < 1) {
+          mes -= 1;
+          if (mes < 1) {
+            mes = 12;
+            año -= 1;
+            día = new Date(año, mes, 0).getDate();
+          } else {
+            día = new Date(año, mes, 0).getDate();
+          }
+        }
+      }
+
+      let periodo = "AM";
+      if (horaUTC >= 12) {
+        periodo = "PM";
+        if (horaUTC > 12) {
+          horaUTC -= 12;
+        }
+      }
+      if (horaUTC === 0) {
+        horaUTC = 12;
+      }
+
+      mes = mes < 10 ? "0" + mes : mes;
+      día = día < 10 ? "0" + día : día;
+      horaUTC = horaUTC < 10 ? "0" + horaUTC : horaUTC;
+      minutosUTC = minutosUTC < 10 ? "0" + minutosUTC : minutosUTC;
+
+      const formatoAAAAMMDDHHmm = `${año}${mes}${día}_${horaUTC}:${minutosUTC}_${periodo}`;
+
+      nit = String(nit).replace(/[^a-zA-Z0-9]/g, "");
+
+      const storage = getStorage();
+
+      const rutaArchivo = `pdfs/${nit}/${tipoDocumento}s/historico/${consecutivo}/${consecutivo}_${formatoAAAAMMDDHHmm}_${rolUsuario}.pdf`;
+      const storageRef = ref(storage, rutaArchivo);
+      await uploadBytes(storageRef, pdfBlob);
+    } catch (error) {
+      console.info(
+        "Error al subir el PDF histórico a Firebase Storage:",
+        error
+      );
     }
   };
 
@@ -644,13 +678,10 @@ function PdfGenerator({
           infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
         ) {
           let designFirmaRevisorFiscal;
-          let firmaDocumento;
 
-          firmaDocumento = await obtenerFirmaCertificado(documento["hoja_No"]);
-
-          if (firmaDocumento) {
+          if (revisorFiscalSignature) {
             designFirmaRevisorFiscal = {
-              image: firmaDocumento,
+              image: revisorFiscalSignature,
               fit: [70, 50],
             };
           } else {
@@ -749,9 +780,7 @@ function PdfGenerator({
         });
       }
       content.push({
-        text: htmlToPdfmake(
-          "<br></br><br></br><br></br>Elaboró" + documento.elaborated
-        ),
+        text: htmlToPdfmake("<br></br></br>Elaboró" + documento.elaborated),
         style: "informacionRevisado",
       });
       content.push({
@@ -761,9 +790,7 @@ function PdfGenerator({
 
       if (tipoDocumento !== "constancia") {
         content.push({
-          text: htmlToPdfmake(
-            "Revisó" + documento.revised + "<br></br><br></br>"
-          ),
+          text: htmlToPdfmake("Revisó" + documento.revised + "<br></br>"),
           style: "informacionRevisado",
         });
       }
@@ -838,7 +865,7 @@ function PdfGenerator({
                   documento.address[2],
                 fontSize: 8,
                 alignment: "left",
-                margin: [20, 8, 0, 0],
+                margin: [10, 8, 0, 0],
               },
               {
                 text:
@@ -861,7 +888,7 @@ function PdfGenerator({
             style: "footer",
           };
         },
-        pageMargins: [40, 80, 40, 80],
+        pageMargins: [40, 80, 40, 50],
       };
 
       if (
@@ -891,47 +918,6 @@ function PdfGenerator({
         );
         localStorage.setItem("shouldGeneratePDF", "false");
         setCargandoDocumento(false);
-
-        // if (
-        //   tipoDocumento == "certificado" &&
-        //   infoDocumento[rolUsuarioAnular].toUpperCase() === "SI" &&
-        //   rolUsuario == "Administracion"
-        // ) {
-        //   uploadPDFToDrive(
-        //     pdfBlob,
-        //     infoDocumento["NIT"],
-        //     tipoDocumento,
-        //     documento["hoja_No"],
-        //     "Anulados"
-        //   );
-        // } else if (
-        //   tipoDocumento == "certificado" &&
-        //   infoDocumento[rolUsuarioAdministrador].toUpperCase() === "SI" &&
-        //   infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
-        //   infoDocumento[rolUsuarioCotabilidad].toUpperCase() === "SI" &&
-        //   infoDocumento[rolUsuarioRevisorFiscal].toUpperCase() === "SI" &&
-        //   rolUsuario == "Fiscal"
-        // ) {
-        //   uploadPDFToDrive(
-        //     pdfBlob,
-        //     infoDocumento["NIT"],
-        //     tipoDocumento,
-        //     documento["hoja_No"],
-        //     "Firmados"
-        //   );
-        // } else if (
-        //   tipoDocumento == "constancia" &&
-        //   infoDocumento[rolUsuariologistica].toUpperCase() === "SI" &&
-        //   rolUsuario == "Logistica"
-        // ) {
-        //   uploadPDFToDrive(
-        //     pdfBlob,
-        //     infoDocumento["NIT"],
-        //     tipoDocumento,
-        //     documento["hoja_No"],
-        //     "Firmados"
-        //   );
-        // }
       });
     }
   };
@@ -939,7 +925,7 @@ function PdfGenerator({
   useEffect(() => {
     const shouldGeneratePDF = localStorage.getItem("shouldGeneratePDF");
 
-    if (shouldGeneratePDF.toLowerCase() === "true") {
+    if (shouldGeneratePDF === "true") {
       fetchData();
     } else {
       downloadDocumentPDF(infoDocumento);
@@ -1000,6 +986,7 @@ PdfGenerator.propTypes = {
   onDataGenerated: PropTypes.func,
   infoDocumento: PropTypes.object,
   actualizarFirmaFiscal: PropTypes.func.isRequired,
+  actualizarPdfBlob: PropTypes.func.isRequired,
 };
 
 export default PdfGenerator;
