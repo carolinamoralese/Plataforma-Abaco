@@ -115,6 +115,7 @@ export function PdfView() {
             documento[rolUsuarioRevisorFiscal].toUpperCase() === "SI"
           ) {
             setMostrarBotonAnular(true);
+            setMostrarBotonReiniar(false);
           }
         } else if (typeof params.constancias_consecutivo !== "undefined") {
           const documento = await obtenerConstancia(
@@ -185,7 +186,6 @@ export function PdfView() {
         }
       }
 
-
       let periodo = "AM";
       if (horaUTC >= 12) {
         periodo = "PM";
@@ -194,7 +194,8 @@ export function PdfView() {
         }
       }
       if (horaUTC === 0) {
-        horaUTC = 12; 
+        horaUTC = 12;
+      }
 
       mes = mes < 10 ? "0" + mes : mes;
       día = día < 10 ? "0" + día : día;
@@ -382,7 +383,6 @@ export function PdfView() {
           );
         } else if (rolDelUsuario == "Fiscal") {
           localStorage.setItem("shouldGeneratePDF", "true");
-          //await cargarFirmaFiscal(firmaFiscalDocumento);
           await modificarEstadoCertificadoRevisorFiscal(
             nuevoEstado,
             params.certificados_consecutivo,
@@ -545,74 +545,75 @@ export function PdfView() {
           />{" "}
           {/* Generar PDF */}
         </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          {mostrarBotones && (
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              {rolUsuario != "Administracion" && rolUsuario != "Fiscal" && (
+                <div className="mr-4 mb-4">
+                  <CreateButton
+                    colorClass="bg-verde-claro w-150 h-10"
+                    selected={false}
+                    onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                    text="Aceptar"
+                  ></CreateButton>
+                </div>
+              )}
+              {rolUsuario != "Administracion" && (
+                <div className="mr-4 mb-4">
+                  <CreateButton
+                    colorClass="bg-gris-claro w-150 h-10"
+                    selected={false}
+                    onClick={() => cambiarEstadoDocumento(rechazar, rolUsuario)}
+                    text="Rechazar"
+                  ></CreateButton>
+                </div>
+              )}
 
-        {mostrarBotones && (
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            {rolUsuario != "Administracion" && rolUsuario != "Fiscal" && (
-              <div className="mr-4 mb-4">
-                <CreateButton
-                  colorClass="bg-verde-claro w-150 h-10"
-                  selected={false}
-                  onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
-                  text="Aceptar"
-                ></CreateButton>
-              </div>
-            )}
-            {rolUsuario != "Administracion" && (
-              <div className="mr-4 mb-4">
-                <CreateButton
-                  colorClass="bg-gris-claro w-150 h-10"
-                  selected={false}
-                  onClick={() => cambiarEstadoDocumento(rechazar, rolUsuario)}
-                  text="Rechazar"
-                ></CreateButton>
-              </div>
-            )}
+              {firmaFiscalDocumento && rolUsuario == "Fiscal" && (
+                <div className="mr-4 mb-4">
+                  <CreateButton
+                    colorClass="bg-verde-claro w-150 h-10"
+                    selected={false}
+                    onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                    text="Aceptar"
+                  ></CreateButton>
+                </div>
+              )}
 
-            {firmaFiscalDocumento && rolUsuario == "Fiscal" && (
-              <div className="mr-4 mb-4">
-                <CreateButton
-                  colorClass="bg-verde-claro w-150 h-10"
-                  selected={false}
-                  onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
-                  text="Aceptar"
-                ></CreateButton>
-              </div>
-            )}
-
-            {rolUsuario == "Administracion" && (
-              <div className="mr-4 mb-4">
-                <CreateButton
-                  colorClass="bg-verde-claro w-150 h-10"
-                  selected={false}
-                  onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
-                  text="Aceptar"
-                ></CreateButton>
-              </div>
-            )}
-          </div>
-        )}
-        {mostrarBotonAnular && rolUsuario == "Administracion" && (
-          <div className="mr-4 mb-4">
-            <CreateButton
-              colorClass="bg-naranja w-150 h-10"
-              selected={false}
-              onClick={() => cambiarEstadoDocumento("ANULAR", rolUsuario)}
-              text="Anular"
-            ></CreateButton>
-          </div>
-        )}
-
-        {mostrarBotonReiniar && rolUsuario == "Administracion" && (
-          <div className="mr-4 mb-4">
-            <CreateButton
-              colorClass="bg-amarillo w-150 h-10"
-              selected={false}
-              onClick={() => reiniciarDocumento()}
-              text="Reiniciar"
-            ></CreateButton>
-          </div>
-        )}
+              {rolUsuario == "Administracion" && (
+                <div className="mr-4 mb-4">
+                  <CreateButton
+                    colorClass="bg-verde-claro w-150 h-10"
+                    selected={false}
+                    onClick={() => cambiarEstadoDocumento(aceptar, rolUsuario)}
+                    text="Aceptar"
+                  ></CreateButton>
+                </div>
+              )}
+            </div>
+          )}
+          {mostrarBotonAnular && rolUsuario == "Administracion" && (
+            <div className="flex gap-4">
+              <CreateButton
+                colorClass="bg-naranja w-150 h-10"
+                className="w-36"
+                selected={false}
+                onClick={() => cambiarEstadoDocumento("ANULAR", rolUsuario)}
+                text="Anular"
+              ></CreateButton>
+            </div>
+          )}
+          {mostrarBotonReiniar && rolUsuario == "Administracion" && (
+            <div className="mr-4 mb-4">
+              <CreateButton
+                colorClass="bg-amarillo w-150 h-10"
+                selected={false}
+                onClick={() => reiniciarDocumento()}
+                text="Reiniciar"
+              ></CreateButton>
+            </div>
+          )}
+        </div>
 
         {isPopupOpen && (
           <PopUp
