@@ -300,6 +300,8 @@ export function PdfView() {
             setIsPopupOpen(true);
           };
           handleRechazo();
+        }else{
+          setMostrarMensajeActualizandoDocumento(false);
         }
       });
     } else if (nuevoEstado === "ANULAR") {
@@ -353,14 +355,17 @@ export function PdfView() {
         }
       });
     } else {
+      console.log("Aceptar certificado");
       // esta condicion es para aceptar los documentos
       if (typeof params.certificados_consecutivo !== "undefined") {
         if (rolDelUsuario == "Logistica") {
+          console.log("Aceptar logistica 1");
           await modificarEstadoCertificadoLogistica(
             nuevoEstado,
             params.certificados_consecutivo,
             userEmail
           );
+          console.log("Aceptar logistica 2");
           await uploadPDFToFirebaseStorage(
             pdfBlob,
             infoDocumento["NIT"],
@@ -431,36 +436,36 @@ export function PdfView() {
       await modificarEstadoCertificadoLogistica(
         "",
         params.certificados_consecutivo,
-        userEmail
+        ""
       );
 
       await modificarEstadoCertificadoContabilidad(
         "",
         params.certificados_consecutivo,
-        userEmail
+        ""
       );
 
       await modificarEstadoCertificadoRevisorFiscal(
         "",
         params.certificados_consecutivo,
-        userEmail
+        ""
       );
 
       await modificarEstadoCertificadoAdministrador(
         "",
         params.certificados_consecutivo,
-        userEmail
+        ""
       );
     } else if (typeof params.constancias_consecutivo !== "undefined") {
       await modificarEstadoConstanciaLogistica(
         "",
         params.constancias_consecutivo,
-        userEmail
+        ""
       );
       await modificarEstadoConstanciaAdministrador(
         "",
         params.constancias_consecutivo,
-        userEmail
+        ""
       );
     }
     localStorage.setItem("shouldGeneratePDF", "true");
